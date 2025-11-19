@@ -21,6 +21,137 @@
 
 ---
 
+## 🔗 Task Dependencies & Parallel Work
+
+### Kako čitati zavisnosti:
+- ✅ **Može paralelno** - Taskovi se mogu raditi istovremeno
+- ⚠️ **Delimična zavisnost** - Može se raditi paralelno, ali testiranje zahteva završetak drugog taska
+- ❌ **Zavisi od** - Ne može se početi dok se drugi task ne završi
+
+### Sprint 1-2: Authentication
+
+#### Backend:
+- ✅ **BE-001 (Registration)** i **BE-002 (Login)** - **MOGU PARALELNO**
+  - Oba koriste JWT za generisanje tokena
+  - Nema međusobne zavisnosti
+  - Developer 1 može da radi oba sekvencijalno ili paralelno (ako ima vremena)
+
+- ⚠️ **BE-003 (JWT Middleware)** - **MOŽE PARALELNO SA BE-001/BE-002**
+  - **Implementacija:** Može da se radi paralelno (zna se JWT format: `{ userId, email, role }`)
+  - **Testiranje:** Zahteva završene BE-001 ili BE-002 (treba validan token za testiranje)
+  - **Preporuka:** Developer 2 može da počne BE-003 istovremeno, ali će testiranje biti na kraju kada Developer 1 završi BE-001 ili BE-002
+
+#### Frontend:
+- ✅ **FE-001 (Login UI)** i **FE-002 (Register UI)** - **MOGU PARALELNO**
+  - Nema zavisnosti između njih
+  - Frontend Developer 1 može da ih radi paralelno ili sekvencijalno
+
+- ❌ **FE-003 (Protected Routes)** - **ZAVISI OD BE-003**
+  - Frontend Developer 2 može da počne strukturu, ali za testiranje treba BE-003 middleware
+  - **Preporuka:** Počni sa osnovnom strukturom, završi testiranje nakon BE-003
+
+### Sprint 3-4: Profiles
+
+#### Backend:
+- ✅ **BE-004 (Get Profile)** i **BE-005 (Update Profile)** - **MOGU PARALELNO**
+  - Oba koriste isti model i strukturu
+  - Nema međusobne zavisnosti
+
+- ✅ **BE-006 (Accessibility Settings)** - **MOŽE PARALELNO SA BE-004/BE-005**
+  - Različita tabela i logika
+  - Nema zavisnosti
+
+#### Frontend:
+- ✅ **FE-004 (Profile Page)** i **FE-005 (Settings Page)** - **MOGU PARALELNO**
+  - Različite stranice, nema zavisnosti
+
+### Sprint 5-6: Lessons
+
+#### Backend:
+- ❌ **BE-007 (Content Service Setup)** - **PRVO**
+  - BE-008 i BE-009 zavise od ovog (treba service da postoji)
+
+- ❌ **BE-008 (Upload)** i **BE-009 (Get Lessons)** - **ZAVISE OD BE-007**
+  - Mogu se raditi paralelno nakon BE-007
+
+- ⚠️ **BE-010 (Publish)** - **ZAVISI OD BE-009**
+  - Zahteva da GET endpoint postoji (za proveru)
+
+#### Frontend:
+- ❌ **FE-006 (Upload UI)** - **ZAVISI OD BE-008**
+  - Ne može se testirati bez backend endpoint-a
+
+- ⚠️ **FE-007 (List UI)** - **ZAVISI OD BE-009**
+  - Može se napraviti UI struktura, ali testiranje zahteva BE-009
+
+- ❌ **FE-008 (Viewer)** - **ZAVISI OD BE-009**
+  - Ne može se testirati bez lesson content-a
+
+### Sprint 7-8: AI Quizzes
+
+#### Backend:
+- ❌ **BE-011 (AI Service Setup)** - **PRVO**
+  - BE-012 zavisi od ovog
+
+- ❌ **BE-012 (Quiz Generation)** - **ZAVISI OD BE-011**
+  - Ne može se raditi bez AI service-a
+
+- ⚠️ **BE-013 (Quiz CRUD)** - **MOŽE PARALELNO SA BE-012**
+  - Različita logika, ali zavisi od BE-011 (Content Service)
+
+#### Frontend:
+- ❌ **FE-009 (Generator UI)** - **ZAVISI OD BE-012**
+  - Ne može se testirati bez AI endpoint-a
+
+- ❌ **FE-010 (Editor UI)** - **ZAVISI OD BE-013**
+  - Ne može se testirati bez CRUD endpoint-a
+
+### Sprint 9-10: Student Flow
+
+#### Backend:
+- ✅ **BE-014 (Quiz Submission)** i **BE-015 (Get Published)** - **MOGU PARALELNO**
+  - Različiti endpoint-i, nema zavisnosti
+
+#### Frontend:
+- ⚠️ **FE-011 (Lessons List)** - **ZAVISI OD BE-015**
+  - Može se napraviti UI struktura, testiranje zahteva BE-015
+
+- ❌ **FE-012 (Quiz Taker)** - **ZAVISI OD BE-014**
+  - Ne može se testirati bez submission endpoint-a
+
+### Sprint 11-12: Parent Dashboard
+
+#### Backend:
+- ✅ **BE-016 (Link Student)** i **BE-017 (Progress)** - **MOGU PARALELNO**
+  - Različita logika, nema zavisnosti
+
+#### Frontend:
+- ❌ **FE-013 (Parent Dashboard)** - **ZAVISI OD BE-016 I BE-017**
+  - Ne može se testirati bez oba endpoint-a
+
+---
+
+## 📊 Preporučeni Redosled Rada (Sprint 1-2 Primer)
+
+### Dan 1-2:
+- **Backend Developer 1:** BE-001 (Registration) - 2 dana
+- **Backend Developer 2:** BE-003 (JWT Middleware) - implementacija (1 dan) + čeka testiranje
+- **Frontend Developer 1:** FE-001 (Login UI) - 2 dana
+- **Frontend Developer 2:** FE-002 (Register UI) - 2 dana
+
+### Dan 3-4:
+- **Backend Developer 1:** BE-002 (Login) - 1.5 dana + testiranje BE-003 sa tokenom
+- **Backend Developer 2:** Testiranje BE-003 sa tokenom iz BE-001/BE-002
+- **Frontend Developer 1:** FE-002 (Register UI) - ako nije završio
+- **Frontend Developer 2:** FE-003 (Protected Routes) - struktura + testiranje nakon BE-003
+
+### Rezultat:
+- **Paralelizam:** 4 developera rade istovremeno
+- **Efikasnost:** Maksimalno iskorišćenje vremena
+- **Testiranje:** Sinhronizovano na kraju
+
+---
+
 # 🔐 SPRINT 1-2: AUTHENTICATION (Nedelja 1-2)
 
 ## BACKEND TASKS
