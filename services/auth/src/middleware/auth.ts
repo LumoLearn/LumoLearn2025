@@ -13,12 +13,23 @@ interface JWTPayload {
 }
 
 /**
+ * Extended Request interface with user property
+ */
+interface AuthRequest extends Request {
+  user?: {
+    userId: string;
+    email: string;
+    role: 'student' | 'teacher' | 'parent';
+  };
+}
+
+/**
  * Middleware za autentifikaciju JWT tokena
  * Čita token iz Authorization header-a i verifikuje ga
  * Dodaje user info na request objekat
  */
 export const authenticateToken = (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ): void => {
@@ -96,7 +107,7 @@ export const authenticateToken = (
  * @returns Express middleware funkcija
  */
 export const requireRole = (allowedRoles: Array<'student' | 'teacher' | 'parent'>) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
     // Proveri da li user postoji na request objektu
     if (!req.user) {
       res.status(401).json({

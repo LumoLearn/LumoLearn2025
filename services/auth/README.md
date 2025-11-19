@@ -19,9 +19,21 @@ Authentication service za LumoLearn platformu. Pruža JWT-based autentifikaciju 
   - TypeScript type definitions
   - Test routes i utilities
 
+- **BE-001:** User Registration Endpoint ✅
+  - Email, password, role validation
+  - Password hashing (bcrypt)
+  - Transaction-based user creation (user + profile + role record)
+  - JWT token generation
+  - Comprehensive error handling
+
+- **BE-002:** User Login Endpoint ✅
+  - Email/password authentication
+  - Password verification (bcrypt)
+  - JWT token generation
+  - Generic error messages (security)
+
 ### 🔨 In Progress
-- **BE-001:** User Registration Endpoint (Backend Developer 1)
-- **BE-002:** User Login Endpoint (Backend Developer 1)
+- None (BE-001, BE-002, BE-003 completed!)
 
 ---
 
@@ -86,10 +98,30 @@ GET /health - Health check
 GET /health/db - Database connection check
 ```
 
-### Auth Endpoints (Coming Soon - BE-001, BE-002)
+### Auth Endpoints ✅
 ```
-POST /api/auth/register - User registration
-POST /api/auth/login - User login
+POST /api/auth/register - User registration (BE-001)
+POST /api/auth/login - User login (BE-002)
+```
+
+**Example - Registration:**
+```bash
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email":"student@test.com",
+    "password":"Test1234!",
+    "role":"student",
+    "firstName":"Marko",
+    "lastName":"Markovic"
+  }'
+```
+
+**Example - Login:**
+```bash
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"student@test.com","password":"Test1234!"}'
 ```
 
 ### Test Endpoints (BE-003 - For Testing Only)
@@ -279,9 +311,11 @@ npm test         # Run tests (coming soon)
 ## 🎯 Next Steps
 
 1. ✅ **BE-003 Completed** - JWT middleware ready
-2. ⏳ **BE-001** - Implement registration endpoint
-3. ⏳ **BE-002** - Implement login endpoint
-4. ⏳ **Integration** - Connect BE-001/BE-002 with middleware
+2. ✅ **BE-001 Completed** - Registration endpoint implemented
+3. ✅ **BE-002 Completed** - Login endpoint implemented
+4. ✅ **Integration** - All endpoints integrated with JWT middleware
+5. ⏳ **Testing** - Start PostgreSQL and run integration tests
+6. ⏳ **Frontend** - Connect with FE-001 (Login UI) and FE-002 (Register UI)
 
 ---
 
