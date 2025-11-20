@@ -1,9 +1,11 @@
+import 'reflect-metadata'; // MUST be first import!
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
-import pool from './config/database';
+import { AppDataSource } from './config/typeorm.config';
+import { User } from './entities/User.entity';
 
 dotenv.config();
 
@@ -23,16 +25,18 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', service: 'auth-service' });
 });
 
-// Database connection test
+// Database connection test (TypeORM version)
 app.get('/health/db', async (req, res) => {
   try {
-    const result = await pool.query('SELECT NOW()');
-    const users = await pool.query('SELECT COUNT(*) as count FROM users');
-    res.json({ 
-      status: 'OK', 
-      database: 'connected', 
-      time: result.rows[0].now,
-      usersCount: users.rows[0].count
+    const result = await AppDataSource.query('SELECT NOW() as now');
+    const userRepo = AppDataSource.getRepository(User);
+    const count = await userRepo.count();
+    res.json({
+      status: 'OK',
+      database: 'connected',
+      orm: 'TypeORM',
+      time: result[0].now,
+      usersCount: count
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -40,7 +44,17 @@ app.get('/health/db', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Auth service running on port ${PORT}`);
-});
+// Initialize TypeORM before starting the server
+AppDataSource.initialize()
+  .then(() => {
+    console.log('✓ TypeORM: Database connection established');
+
+    app.listen(PORT, () => {
+      console.log(`✓ Auth service running on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('✗ TypeORM: Database connection failed:', error);
+    process.exit(1);
+  });
 

@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
-import { createUser, findByEmail, verifyPassword } from '../models/User';
+import { UserRepository } from '../repositories/UserRepository';
+import { UserRole } from '../entities/User.entity';
 import { generateToken } from '../middleware/auth';
+import bcrypt from 'bcrypt';
 
 /**
  * Register a new user
@@ -21,7 +23,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const { email, password, role, firstName, lastName } = req.body;
 
     // Check if user already exists
-    const existingUser = await findByEmail(email);
+    const existingUser = await UserRepository.findByEmail(email);
     if (existingUser) {
       res.status(400).json({
         success: false,
@@ -30,14 +32,14 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Create user (this handles password hashing, profile creation, and role record)
-    const user = await createUser({
+    // Create user with profile and role-specific record
+    const user = await UserRepository.createUserWithProfile(
       email,
       password,
-      role,
+      role as UserRole,
       firstName,
       lastName
-    });
+    );
 
     // Generate JWT token
     const token = generateToken({
@@ -96,7 +98,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const { email, password } = req.body;
 
     // Find user by email
-    const user = await findByEmail(email);
+    const user = await UserRepository.findByEmail(email);
 
     // If user doesn't exist or password is incorrect
     // Use the same error message for both cases (security best practice)
@@ -108,8 +110,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Verify password
-    const isPasswordValid = await verifyPassword(password, user.password_hash);
+    // Verify password using bcrypt
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
       res.status(401).json({
