@@ -79,8 +79,23 @@ CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_lessons_teacher ON lessons(teacher_id);
 CREATE INDEX idx_quizzes_lesson ON quizzes(lesson_id);
 
--- Test user
-INSERT INTO users (email, password_hash, role) 
-VALUES ('teacher@test.com', '$2b$12$LQ3KXSshE3jTJdPHSAr.x.vZ7uQ2xXI8YxC5E0J6vdLQ8KqYHX8t6', 'teacher');
+-- Test user with profile and teacher record
+DO $$
+DECLARE
+    v_user_id UUID;
+BEGIN
+    -- Insert user
+    INSERT INTO users (email, password_hash, role) 
+    VALUES ('teacher@test.com', '$2b$10$PYyQaPq9W3x/Q9yHBd01MufwXiYrJH7DOsDpN29OE5B/sD9yeqjN6', 'teacher')
+    RETURNING id INTO v_user_id;
+    
+    -- Insert profile
+    INSERT INTO profiles (user_id, first_name, last_name)
+    VALUES (v_user_id, 'Test', 'Teacher');
+    
+    -- Insert teacher record
+    INSERT INTO teachers (user_id)
+    VALUES (v_user_id);
+END $$;
 -- Password: Test1234!
 
