@@ -23,7 +23,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6 lg:px-8">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold">LumoLearn</h1>
             <span className="text-sm text-muted-foreground">| {title}</span>
@@ -45,7 +45,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
         </div>
       </header>
 
-      <main className="container py-6">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 lg:px-8">{children}</main>
     </div>
   );
 }
