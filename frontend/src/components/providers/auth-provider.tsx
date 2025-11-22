@@ -4,11 +4,12 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const initializeAuth = useAuthStore((state) => state.initializeAuth);
+  const hydrate = useAuthStore((state) => state.hydrate);
 
   useEffect(() => {
-    initializeAuth();
-  }, [initializeAuth]);
+    // Trigger hydration after store is rehydrated from localStorage
+    hydrate();
+  }, [hydrate]);
 
   return <>{children}</>;
 }

@@ -33,7 +33,7 @@ export const registerSchema = z
       .min(2, 'Last name must be at least 2 characters')
       .max(100, 'Last name must be at most 100 characters'),
     role: z.enum(['student', 'teacher', 'parent'], {
-      errorMap: () => ({ message: 'Please select a role' }),
+      message: 'Please select a role',
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {

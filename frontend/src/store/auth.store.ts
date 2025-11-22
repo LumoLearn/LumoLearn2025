@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User, AuthState } from '@/lib/types/auth';
 
 interface AuthStore extends AuthState {
@@ -7,13 +7,13 @@ interface AuthStore extends AuthState {
   clearAuth: () => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
-  initializeAuth: () => void;
+  hydrate: () => void;
 }
 
 // Store for managing authentication state
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
@@ -21,9 +21,6 @@ export const useAuthStore = create<AuthStore>()(
       error: null,
 
       setAuth: (user, token) => {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('accessToken', token);
-        }
         set({
           user,
           token,
@@ -34,9 +31,6 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       clearAuth: () => {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('accessToken');
-        }
         set({
           user: null,
           token: null,
@@ -50,14 +44,11 @@ export const useAuthStore = create<AuthStore>()(
 
       setError: (error) => set({ error, isLoading: false }),
 
-      initializeAuth: () => {
-        if (typeof window !== 'undefined') {
-          const token = localStorage.getItem('accessToken');
-          if (token) {
-            set({ token, isLoading: false });
-          } else {
-            set({ isLoading: false });
-          }
+      hydrate: () => {
+        // This will be called after the store rehydrates from localStorage
+        const state = get();
+        if (state.token && state.user) {
+          set({ isAuthenticated: true, isLoading: false });
         } else {
           set({ isLoading: false });
         }
@@ -65,12 +56,23 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'auth-storage',
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user,
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
-      skipHydration: true, // State will be initialized manually
+      onRehydrateStorage: () => {
+        return (state, error) => {
+          if (error) {
+            console.error('Error rehydrating auth store:', error);
+            state?.setLoading(false);
+          } else if (state) {
+            // Ensure loading is set to false after rehydration
+            state.setLoading(false);
+          }
+        };
+      },
     }
   )
 );
