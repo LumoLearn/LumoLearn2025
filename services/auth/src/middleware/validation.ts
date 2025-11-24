@@ -59,6 +59,54 @@ export const loginValidation = [
 ];
 
 /**
+ * Validation rules for accessibility settings
+ */
+export const accessibilitySettingsValidation = [
+  // Font family validation (optional)
+  body('font_family')
+    .optional()
+    .isString()
+    .withMessage('Font family must be a string')
+    .isIn(['Arial', 'OpenDyslexic', 'Comic Sans MS', 'Verdana', 'Times New Roman', 'Georgia'])
+    .withMessage('Font family must be one of: Arial, OpenDyslexic, Comic Sans MS, Verdana, Times New Roman, Georgia')
+    .trim(),
+
+  // Font size validation (optional)
+  body('font_size')
+    .optional()
+    .isInt({ min: 12, max: 24 })
+    .withMessage('Font size must be between 12 and 24'),
+
+  // Line spacing validation (optional)
+  body('line_spacing')
+    .optional()
+    .isFloat({ min: 1.0, max: 3.0 })
+    .withMessage('Line spacing must be between 1.0 and 3.0'),
+
+  // Letter spacing validation (optional)
+  body('letter_spacing')
+    .optional()
+    .isFloat({ min: 0, max: 0.2 })
+    .withMessage('Letter spacing must be between 0 and 0.2'),
+
+  // Text color validation (optional)
+  body('text_color')
+    .optional()
+    .isString()
+    .withMessage('Text color must be a string')
+    .matches(/^#[0-9A-Fa-f]{6}$/)
+    .withMessage('Text color must be a valid hex color (e.g., #000000)'),
+
+  // Background color validation (optional)
+  body('background_color')
+    .optional()
+    .isString()
+    .withMessage('Background color must be a string')
+    .matches(/^#[0-9A-Fa-f]{6}$/)
+    .withMessage('Background color must be a valid hex color (e.g., #FFFFFF)'),
+];
+
+/**
  * Middleware to handle validation errors
  *
  * This should be used after validation rules to check if there are any errors
