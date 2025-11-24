@@ -1,4 +1,6 @@
-export type UserRole = 'student' | 'teacher' | 'parent';
+import { UserRole } from '../constants/roles';
+
+export type { UserRole };
 
 export interface User {
   id: string;

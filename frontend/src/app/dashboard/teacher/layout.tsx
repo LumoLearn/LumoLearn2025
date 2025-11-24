@@ -2,6 +2,7 @@
 
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardLayout } from '@/components/layouts/dashboard-layout';
+import { USER_ROLES } from '@/lib/constants/roles';
 
 export default function TeacherLayout({
   children,
@@ -9,7 +10,7 @@ export default function TeacherLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ProtectedRoute allowedRoles={['teacher']}>
+    <ProtectedRoute allowedRoles={[USER_ROLES.TEACHER]}>
       <DashboardLayout title="Teacher Dashboard">{children}</DashboardLayout>
     </ProtectedRoute>
   );

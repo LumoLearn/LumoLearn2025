@@ -43,19 +43,7 @@ export default function LoginPage() {
         setAuth(response.user, response.token);
 
         // Redirect based on role
-        switch (response.user.role) {
-          case 'student':
-            router.push('/dashboard/student');
-            break;
-          case 'teacher':
-            router.push('/dashboard/teacher');
-            break;
-          case 'parent':
-            router.push('/dashboard/parent');
-            break;
-          default:
-            router.push('/dashboard');
-        }
+        router.push(`/dashboard/${response.user.role}`);
       } else {
         setApiError(response.error || 'Login failed');
       }
