@@ -36,7 +36,7 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
-    // Clear token from localStorage
-    localStorage.removeItem('accessToken');
+    // Clear auth storage (zustand persist storage)
+    localStorage.removeItem('auth-storage');
   },
 };

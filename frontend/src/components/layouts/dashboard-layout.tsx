@@ -1,6 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { Button } from '@/components/ui/button';
 import { authService } from '@/lib/services/auth.service';
@@ -12,6 +13,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, title }: DashboardLayoutProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, clearAuth } = useAuthStore();
 
   const handleLogout = async () => {
@@ -20,16 +22,48 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
     router.push('/login');
   };
 
+  // Get dashboard home path based on role
+  const dashboardHome = user?.role ? `/dashboard/${user.role}` : '/';
+
+  // Check if current path is active
+  const isActive = (path: string) => pathname === path;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold">LumoLearn</h1>
-            <span className="text-sm text-muted-foreground">| {title}</span>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold">LumoLearn</h1>
+              <span className="text-sm text-muted-foreground">| {title}</span>
+            </div>
+
+            {/* Navigation Links */}
+            <nav className="hidden md:flex items-center gap-1">
+              <Link
+                href={dashboardHome}
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground ${
+                  isActive(dashboardHome)
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/dashboard/profile"
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground ${
+                  isActive('/dashboard/profile')
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                Profile
+              </Link>
+            </nav>
           </div>
 
-          <nav className="flex items-center gap-4">
+          <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
                 {user?.email}
@@ -41,7 +75,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
             <Button variant="outline" size="sm" onClick={handleLogout}>
               Logout
             </Button>
-          </nav>
+          </div>
         </div>
       </header>
 
