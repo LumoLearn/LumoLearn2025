@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
 import studentRoutes from './routes/studentRoutes';
+import userRoutes from './routes/userRoutes';
 import { AppDataSource } from './config/typeorm.config';
 import { User } from './entities/User.entity';
 
@@ -21,6 +22,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
+app.use('/api/users', userRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
