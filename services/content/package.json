@@ -22,16 +22,20 @@
     "express": "^5.1.0",
     "express-validator": "^7.3.1",
     "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
     "mammoth": "^1.11.0",
     "mongodb": "^7.0.0",
     "multer": "^2.0.2",
     "pdf-parse": "^2.4.5",
+    "pg": "^8.13.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/helmet": "^0.0.48",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/pg": "^8.11.10",
     "nodemon": "^3.1.11"
   }
 }

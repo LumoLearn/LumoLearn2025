@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import { mongoDb } from './config/database';
+import { postgresDb } from './config/postgres';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import healthRoutes from './routes/healthRoutes';
 import lessonRoutes from './routes/lessonRoutes';
@@ -17,6 +18,7 @@ dotenv.config();
  * Microservice for managing lesson uploads and content storage
  * - Handles Word (.docx) and PDF file uploads
  * - Stores lesson content in MongoDB
+ * - Stores lesson metadata in PostgreSQL
  * - Provides lesson retrieval endpoints
  *
  * Port: 3002 (default)
@@ -34,9 +36,12 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 app.use(helmet());
 
 // CORS configuration
+const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000').split(',');
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: corsOrigins,
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use(cors(corsOptions));
 
@@ -75,12 +80,22 @@ app.get('/', (req, res) => {
     endpoints: {
       health: '/health',
       database: '/health/db',
-      lessons: '/api/lessons',
+      lessons: {
+        upload: 'POST /api/lessons/upload',
+        list: 'GET /api/lessons',
+        get: 'GET /api/lessons/:id',
+        published: 'GET /api/lessons/published',
+        publish: 'PUT /api/lessons/:id/publish',
+        unpublish: 'PUT /api/lessons/:id/unpublish',
+        update: 'PUT /api/lessons/:id',
+        delete: 'DELETE /api/lessons/:id',
+      },
     },
     configuration: {
       maxFileSizeMB: uploadConfig.maxFileSizeMB,
       allowedFileTypes: uploadConfig.allowedExtensions,
       mongodbConnected: mongoDb.isConnected(),
+      postgresConnected: postgresDb.isConnected(),
     },
   });
 });
@@ -109,12 +124,17 @@ const startServer = async (): Promise<void> => {
     console.log('\n1. Connecting to MongoDB...');
     await mongoDb.connect();
 
+    // Connect to PostgreSQL
+    console.log('\n2. Connecting to PostgreSQL...');
+    await postgresDb.connect();
+
     // Start Express server
-    console.log('\n2. Starting Express server...');
+    console.log('\n3. Starting Express server...');
     app.listen(PORT, () => {
       console.log(`✓ Server is running on port ${PORT}`);
       console.log(`✓ Environment: ${NODE_ENV}`);
       console.log(`✓ MongoDB connected: ${mongoDb.isConnected()}`);
+      console.log(`✓ PostgreSQL connected: ${postgresDb.isConnected()}`);
 
       const uploadConfig = getUploadConfig();
       console.log(`✓ Max file size: ${uploadConfig.maxFileSizeMB}MB`);
@@ -124,10 +144,13 @@ const startServer = async (): Promise<void> => {
       console.log('Content Service is ready to accept requests!');
       console.log('='.repeat(60));
       console.log(`\nEndpoints:`);
-      console.log(`  - Health check:    http://localhost:${PORT}/health`);
-      console.log(`  - Database check:  http://localhost:${PORT}/health/db`);
-      console.log(`  - Lessons API:     http://localhost:${PORT}/api/lessons`);
-      console.log(`  - Service info:    http://localhost:${PORT}/`);
+      console.log(`  - Health check:      http://localhost:${PORT}/health`);
+      console.log(`  - Database check:    http://localhost:${PORT}/health/db`);
+      console.log(`  - Upload lesson:     POST http://localhost:${PORT}/api/lessons/upload`);
+      console.log(`  - List lessons:      GET http://localhost:${PORT}/api/lessons`);
+      console.log(`  - Get lesson:        GET http://localhost:${PORT}/api/lessons/:id`);
+      console.log(`  - Published lessons: GET http://localhost:${PORT}/api/lessons/published`);
+      console.log(`  - Service info:      http://localhost:${PORT}/`);
       console.log('');
     });
   } catch (error) {
@@ -147,6 +170,10 @@ const shutdown = async (): Promise<void> => {
   try {
     await mongoDb.disconnect();
     console.log('✓ MongoDB disconnected');
+
+    await postgresDb.disconnect();
+    console.log('✓ PostgreSQL disconnected');
+
     process.exit(0);
   } catch (error) {
     console.error('Error during shutdown:', error);

@@ -1,5 +1,8 @@
 import mammoth from 'mammoth';
-import pdfParse from 'pdf-parse';
+
+// pdf-parse has non-standard export, use require
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const pdfParse = require('pdf-parse');
 
 /**
  * File Service
@@ -57,9 +60,9 @@ export const parsePDFFile = async (
     const pdfData = await pdfParse(buffer);
 
     // Convert plain text to basic HTML with paragraphs
-    const textLines = pdfData.text.split('\n');
+    const textLines: string[] = pdfData.text.split('\n');
     const htmlContent = textLines
-      .map((line) => {
+      .map((line: string) => {
         const trimmedLine = line.trim();
         if (trimmedLine.length === 0) {
           return '<br>';
