@@ -12,9 +12,14 @@ export const lessonsApi = {
    * Upload a new lesson file (Word or PDF)
    * @param file - The file to upload (.docx or .pdf)
    * @param title - The lesson title
+   * @param onUploadProgress - Optional callback for upload progress updates
    * @returns Promise with lesson data including ID and content ID
    */
-  async uploadLesson(file: File, title: string): Promise<LessonUploadResponse> {
+  async uploadLesson(
+    file: File,
+    title: string,
+    onUploadProgress?: (progressEvent: { loaded: number; total: number; percentage: number }) => void
+  ): Promise<LessonUploadResponse> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('title', title);
@@ -26,6 +31,14 @@ export const lessonsApi = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        onUploadProgress: onUploadProgress
+          ? (progressEvent) => {
+              const total = progressEvent.total || 0;
+              const loaded = progressEvent.loaded || 0;
+              const percentage = total > 0 ? Math.round((loaded * 100) / total) : 0;
+              onUploadProgress({ loaded, total, percentage });
+            }
+          : undefined,
       }
     );
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -22,18 +22,25 @@ import {
 } from '@/lib/utils/file-upload';
 
 /**
+ * Constants
+ */
+const REDIRECT_DELAY_MS = 1500;
+
+/**
  * LessonUploadForm Component
  *
  * A comprehensive form for uploading lesson files (Word/PDF) with:
  * - Drag-and-drop support
  * - File type and size validation
- * - Upload progress indication
+ * - Real-time upload progress tracking
  * - Error handling
  * - Success feedback
  */
 export function LessonUploadForm() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const dragCounterRef = useRef(0);
 
   // Component state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -89,13 +96,21 @@ export function LessonUploadForm() {
   };
 
   /**
+   * Handle drag enter event
+   */
+  const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+    preventDefaultDrag(event);
+    dragCounterRef.current += 1;
+    if (isFileDropped(event)) {
+      setIsDragging(true);
+    }
+  };
+
+  /**
    * Handle drag over event
    */
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     preventDefaultDrag(event);
-    if (isFileDropped(event)) {
-      setIsDragging(true);
-    }
   };
 
   /**
@@ -103,7 +118,10 @@ export function LessonUploadForm() {
    */
   const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
     preventDefaultDrag(event);
-    setIsDragging(false);
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
   };
 
   /**
@@ -111,6 +129,7 @@ export function LessonUploadForm() {
    */
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     preventDefaultDrag(event);
+    dragCounterRef.current = 0;
     setIsDragging(false);
     handleFileChange(event);
   };
@@ -128,6 +147,18 @@ export function LessonUploadForm() {
   };
 
   /**
+   * Cleanup on component unmount
+   */
+  useEffect(() => {
+    return () => {
+      // Clear redirect timeout if component unmounts
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  /**
    * Handle form submission
    */
   const onSubmit = async (data: LessonUploadFormData) => {
@@ -141,31 +172,25 @@ export function LessonUploadForm() {
     setUploadProgress(0);
 
     try {
-      // Simulate upload progress (axios doesn't provide progress in this setup)
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 200);
+      // Upload lesson with real-time progress tracking
+      const response = await lessonsApi.uploadLesson(
+        selectedFile,
+        data.title,
+        (progressEvent) => {
+          setUploadProgress(progressEvent.percentage);
+        }
+      );
 
-      // Upload lesson
-      const response = await lessonsApi.uploadLesson(selectedFile, data.title);
-
-      // Clear progress interval
-      clearInterval(progressInterval);
+      // Set to 100% on completion
       setUploadProgress(100);
 
       // Show success state
       setUploadSuccess(true);
 
-      // Redirect after success
-      setTimeout(() => {
+      // Redirect after success with cleanup tracking
+      redirectTimeoutRef.current = setTimeout(() => {
         router.push('/dashboard/teacher/lessons');
-      }, 1500);
+      }, REDIRECT_DELAY_MS);
     } catch (error: any) {
       setUploadError(
         error.response?.data?.error ||
@@ -209,6 +234,7 @@ export function LessonUploadForm() {
             {/* Drag and Drop Zone */}
             <div
               onClick={createFileInputClickHandler(fileInputRef)}
+              onDragEnter={handleDragEnter}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
