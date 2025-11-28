@@ -28,6 +28,37 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
   // Check if current path is active
   const isActive = (path: string) => pathname === path;
 
+  // Get role-specific navigation links
+  const getRoleNavLinks = () => {
+    if (user?.role === 'teacher') {
+      return [
+        { href: '/dashboard/teacher', label: 'Dashboard' },
+        { href: '/dashboard/teacher/lessons', label: 'Lessons' },
+        { href: '/dashboard/profile', label: 'Profile' },
+      ];
+    }
+    if (user?.role === 'student') {
+      return [
+        { href: '/dashboard/student', label: 'Dashboard' },
+        { href: '/dashboard/student/lessons', label: 'Lessons' },
+        { href: '/dashboard/student/settings', label: 'Settings' },
+        { href: '/dashboard/profile', label: 'Profile' },
+      ];
+    }
+    if (user?.role === 'parent') {
+      return [
+        { href: '/dashboard/parent', label: 'Dashboard' },
+        { href: '/dashboard/profile', label: 'Profile' },
+      ];
+    }
+    return [
+      { href: dashboardHome, label: 'Dashboard' },
+      { href: '/dashboard/profile', label: 'Profile' },
+    ];
+  };
+
+  const navLinks = getRoleNavLinks();
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -40,26 +71,19 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
 
             {/* Navigation Links */}
             <nav className="hidden md:flex items-center gap-1">
-              <Link
-                href={dashboardHome}
-                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground ${
-                  isActive(dashboardHome)
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/dashboard/profile"
-                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground ${
-                  isActive('/dashboard/profile')
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                Profile
-              </Link>
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground ${
+                    isActive(link.href)
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-muted-foreground'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </nav>
           </div>
 
