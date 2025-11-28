@@ -28,9 +28,6 @@ export const lessonsApi = {
       `${CONTENT_SERVICE_URL}/api/lessons/upload`,
       formData,
       {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
         onUploadProgress: onUploadProgress
           ? (progressEvent) => {
               const total = progressEvent.total || 0;

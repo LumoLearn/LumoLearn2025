@@ -1,8 +1,6 @@
 import mammoth from 'mammoth';
-
-// pdf-parse has non-standard export, use require
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pdfParse = require('pdf-parse');
+// pdf-parse v2 uses class-based API
+import { PDFParse } from 'pdf-parse';
 
 /**
  * File Service
@@ -50,17 +48,19 @@ export const parseWordFile = async (
 /**
  * Parse PDF file to HTML
  *
- * Uses pdf-parse library to extract text from PDF and convert to basic HTML
+ * Uses pdf-parse v2 library to extract text from PDF and convert to basic HTML
  */
 export const parsePDFFile = async (
   buffer: Buffer,
   fileName: string
 ): Promise<ParsedContent> => {
   try {
-    const pdfData = await pdfParse(buffer);
+    // pdf-parse v2 uses class-based API - use 'data' property with Uint8Array
+    const parser = new PDFParse({ data: new Uint8Array(buffer) });
+    const result = await parser.getText();
 
     // Convert plain text to basic HTML with paragraphs
-    const textLines: string[] = pdfData.text.split('\n');
+    const textLines: string[] = result.text.split('\n');
     const htmlContent = textLines
       .map((line: string) => {
         const trimmedLine = line.trim();
@@ -73,7 +73,7 @@ export const parsePDFFile = async (
 
     return {
       html: htmlContent,
-      plainText: pdfData.text,
+      plainText: result.text,
       metadata: {
         fileType: 'pdf',
         fileName,

@@ -24,6 +24,12 @@ apiClient.interceptors.request.use((config) => {
       console.error('Failed to parse auth storage:', error);
     }
   }
+
+  // Za FormData requestove, ukloni application/json i dozvoli browseru da postavi multipart/form-data
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
+
   return config;
 });
 
