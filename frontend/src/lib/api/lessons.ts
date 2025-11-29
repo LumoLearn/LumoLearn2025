@@ -66,11 +66,11 @@ export const lessonsApi = {
    * @returns Promise with lesson including HTML content
    */
   async getLessonById(id: string): Promise<Lesson> {
-    const response = await apiClient.get<Lesson>(
+    const response = await apiClient.get<{ success: boolean; lesson: Lesson }>(
       `${CONTENT_SERVICE_URL}/api/lessons/${id}`
     );
 
-    return response.data;
+    return response.data.lesson;
   },
 
   /**
@@ -80,12 +80,12 @@ export const lessonsApi = {
    * @returns Promise with updated lesson
    */
   async updateLesson(id: string, title: string): Promise<Lesson> {
-    const response = await apiClient.put<Lesson>(
+    const response = await apiClient.put<{ success: boolean; lesson: Lesson }>(
       `${CONTENT_SERVICE_URL}/api/lessons/${id}`,
       { title }
     );
 
-    return response.data;
+    return response.data.lesson;
   },
 
   /**
@@ -107,11 +107,11 @@ export const lessonsApi = {
    * @returns Promise with updated lesson
    */
   async publishLesson(id: string): Promise<Lesson> {
-    const response = await apiClient.put<Lesson>(
+    const response = await apiClient.put<{ success: boolean; lesson: Lesson }>(
       `${CONTENT_SERVICE_URL}/api/lessons/${id}/publish`
     );
 
-    return response.data;
+    return response.data.lesson;
   },
 
   /**
@@ -120,11 +120,11 @@ export const lessonsApi = {
    * @returns Promise with updated lesson
    */
   async unpublishLesson(id: string): Promise<Lesson> {
-    const response = await apiClient.put<Lesson>(
+    const response = await apiClient.put<{ success: boolean; lesson: Lesson }>(
       `${CONTENT_SERVICE_URL}/api/lessons/${id}/unpublish`
     );
 
-    return response.data;
+    return response.data.lesson;
   },
 
   /**

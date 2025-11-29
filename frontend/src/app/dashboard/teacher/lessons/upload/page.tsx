@@ -5,8 +5,8 @@ import { LessonUploadForm } from '@/components/features/lessons/LessonUploadForm
  * Metadata for the lesson upload page
  */
 export const metadata: Metadata = {
-  title: 'Upload Lekcije | LumoLearn',
-  description: 'Upload nove lekcije za učenike',
+  title: 'Upload Lesson | LumoLearn',
+  description: 'Upload new lessons for students',
 };
 
 /**
@@ -32,9 +32,9 @@ export default function LessonUploadPage() {
     <div className="container mx-auto py-8 px-4">
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Nova Lekcija</h1>
+        <h1 className="text-3xl font-bold tracking-tight">New Lesson</h1>
         <p className="text-muted-foreground mt-2">
-          Kreirajte novu lekciju upload-ovanjem Word ili PDF dokumenta
+          Create a new lesson by uploading a Word or PDF document
         </p>
       </div>
 
@@ -44,51 +44,51 @@ export default function LessonUploadPage() {
       {/* Instructions Section */}
       <div className="max-w-2xl mx-auto mt-8 space-y-6">
         <div className="rounded-lg border bg-card p-6">
-          <h2 className="text-lg font-semibold mb-4">Uputstvo za upload</h2>
+          <h2 className="text-lg font-semibold mb-4">Upload Instructions</h2>
 
           <div className="space-y-4 text-sm text-muted-foreground">
             <div>
-              <h3 className="font-medium text-foreground mb-2">Podržani formati:</h3>
+              <h3 className="font-medium text-foreground mb-2">Supported Formats:</h3>
               <ul className="list-disc list-inside space-y-1">
-                <li>Microsoft Word dokumenti (.docx)</li>
-                <li>PDF dokumenti (.pdf)</li>
+                <li>Microsoft Word documents (.docx)</li>
+                <li>PDF documents (.pdf)</li>
               </ul>
             </div>
 
             <div>
-              <h3 className="font-medium text-foreground mb-2">Ograničenja:</h3>
+              <h3 className="font-medium text-foreground mb-2">Limitations:</h3>
               <ul className="list-disc list-inside space-y-1">
-                <li>Maksimalna veličina fajla: 10MB</li>
-                <li>Naslov lekcije: 3-255 karaktera</li>
+                <li>Maximum file size: 10MB</li>
+                <li>Lesson title: 3-255 characters</li>
               </ul>
             </div>
 
             <div>
-              <h3 className="font-medium text-foreground mb-2">Napomene:</h3>
+              <h3 className="font-medium text-foreground mb-2">Important Notes:</h3>
               <ul className="list-disc list-inside space-y-1">
                 <li>
-                  Fajlovi se automatski konvertuju u HTML format za prikaz učenicima
+                  Files are automatically converted to HTML format for student viewing
                 </li>
                 <li>
-                  Upload-ovane lekcije su inicijalno <strong>nepublikovane</strong> i
-                  nevidljive učenicima
+                  Uploaded lessons are initially <strong>unpublished</strong> and
+                  invisible to students
                 </li>
                 <li>
-                  Možete ih publikovati nakon upload-a iz liste lekcija
+                  You can publish them after upload from the lessons list
                 </li>
                 <li>
-                  Formatiranje iz originalnog dokumenta će biti očuvano koliko je moguće
+                  Formatting from the original document will be preserved as much as possible
                 </li>
               </ul>
             </div>
 
             <div>
-              <h3 className="font-medium text-foreground mb-2">Preporuke za najbolje rezultate:</h3>
+              <h3 className="font-medium text-foreground mb-2">Best Practices for Optimal Results:</h3>
               <ul className="list-disc list-inside space-y-1">
-                <li>Koristite jasne naslove i podnaslove</li>
-                <li>Izbegavajte složeno formatiranje i tabele</li>
-                <li>Koristite standardne fontove</li>
-                <li>Proverite sadržaj nakon upload-a pre publikovanja</li>
+                <li>Use clear headings and subheadings</li>
+                <li>Avoid complex formatting and tables</li>
+                <li>Use standard fonts</li>
+                <li>Review content after upload before publishing</li>
               </ul>
             </div>
           </div>
