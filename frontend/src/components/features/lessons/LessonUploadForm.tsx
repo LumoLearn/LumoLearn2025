@@ -78,7 +78,7 @@ export function LessonUploadForm() {
     // Validate file
     const validation = validateFile(file);
     if (!validation.isValid) {
-      setFileError(validation.error || 'Neispravan fajl');
+      setFileError(validation.error || 'Invalid file');
       setSelectedFile(null);
       return;
     }
@@ -163,7 +163,7 @@ export function LessonUploadForm() {
    */
   const onSubmit = async (data: LessonUploadFormData) => {
     if (!selectedFile) {
-      setFileError('Morate izabrati fajl');
+      setFileError('You must select a file');
       return;
     }
 
@@ -173,7 +173,7 @@ export function LessonUploadForm() {
 
     try {
       // Upload lesson with real-time progress tracking
-      const response = await lessonsApi.uploadLesson(
+      await lessonsApi.uploadLesson(
         selectedFile,
         data.title,
         (progressEvent) => {
@@ -195,7 +195,7 @@ export function LessonUploadForm() {
       setUploadError(
         error.response?.data?.error ||
         error.message ||
-        'Došlo je do greške prilikom upload-a lekcije'
+        'An error occurred while uploading the lesson'
       );
       setUploadProgress(0);
     } finally {
@@ -219,9 +219,9 @@ export function LessonUploadForm() {
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Upload Nova Lekcija</CardTitle>
+        <CardTitle>Upload New Lesson</CardTitle>
         <CardDescription>
-          Prenesite Word (.docx) ili PDF fajl sa sadržajem lekcije
+          Upload a Word (.docx) or PDF file with lesson content
         </CardDescription>
       </CardHeader>
 
@@ -229,7 +229,7 @@ export function LessonUploadForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* File Upload Area */}
           <div className="space-y-2">
-            <Label htmlFor="file-upload">Fajl Lekcije *</Label>
+            <Label htmlFor="file-upload">Lesson File *</Label>
 
             {/* Drag and Drop Zone */}
             <div
@@ -273,10 +273,10 @@ export function LessonUploadForm() {
                   <>
                     <div className="text-center">
                       <p className="text-sm font-medium">
-                        Kliknite ili prevucite fajl ovde
+                        Click or drag file here
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Podržani formati: .docx, .pdf (max 10MB)
+                        Supported formats: .docx, .pdf (max 10MB)
                       </p>
                     </div>
                   </>
@@ -302,7 +302,7 @@ export function LessonUploadForm() {
                         className="mt-2"
                       >
                         <X className="w-4 h-4 mr-1" />
-                        Ukloni fajl
+                        Remove file
                       </Button>
                     )}
                   </div>
@@ -313,7 +313,7 @@ export function LessonUploadForm() {
               {isDragging && (
                 <div className="absolute inset-0 bg-primary/10 rounded-lg flex items-center justify-center">
                   <p className="text-sm font-medium text-primary">
-                    Pustite fajl ovde...
+                    Drop file here...
                   </p>
                 </div>
               )}
@@ -330,11 +330,11 @@ export function LessonUploadForm() {
 
           {/* Title Input */}
           <div className="space-y-2">
-            <Label htmlFor="title">Naslov Lekcije *</Label>
+            <Label htmlFor="title">Lesson Title *</Label>
             <Input
               id="title"
               type="text"
-              placeholder="Unesite naslov lekcije..."
+              placeholder="Enter lesson title..."
               {...register('title')}
               disabled={isUploading}
               className={errors.title ? 'border-destructive' : ''}
@@ -348,7 +348,7 @@ export function LessonUploadForm() {
           {isUploading && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span>Upload u toku...</span>
+                <span>Uploading...</span>
                 <span>{uploadProgress}%</span>
               </div>
               <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
@@ -365,7 +365,7 @@ export function LessonUploadForm() {
             <div className="flex items-center gap-2 p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
               <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
               <p className="text-sm text-green-700 dark:text-green-300">
-                Lekcija je uspešno upload-ovana! Preusmeravanje...
+                Lesson uploaded successfully! Redirecting...
               </p>
             </div>
           )}
@@ -386,7 +386,7 @@ export function LessonUploadForm() {
               onClick={() => router.back()}
               disabled={isUploading}
             >
-              Otkaži
+              Cancel
             </Button>
 
             <Button
@@ -396,12 +396,12 @@ export function LessonUploadForm() {
               {isUploading ? (
                 <>
                   <Upload className="w-4 h-4 mr-2 animate-pulse" />
-                  Upload u toku...
+                  Uploading...
                 </>
               ) : (
                 <>
                   <Upload className="w-4 h-4 mr-2" />
-                  Upload Lekciju
+                  Upload Lesson
                 </>
               )}
             </Button>
