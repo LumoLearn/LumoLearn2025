@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Plus, Loader2 } from 'lucide-react';
 import { lessonsApi } from '@/lib/api/lessons';
+import { quizzesApi } from '@/lib/api/quizzes';
 
 interface DashboardStats {
   totalLessons: number;
@@ -43,11 +44,20 @@ export default function TeacherDashboard() {
         // Calculate unpublished
         const unpublishedLessons = totalLessons - publishedLessons;
 
+        // Fetch quizzes
+        let totalQuizzes = 0;
+        try {
+          const quizzesResponse = await quizzesApi.getQuizzes();
+          totalQuizzes = quizzesResponse.quizzes?.length || 0;
+        } catch (error) {
+          console.error('Failed to fetch quizzes:', error);
+        }
+
         setStats({
           totalLessons,
           publishedLessons,
           unpublishedLessons,
-          totalQuizzes: 0, // TODO: Implement when quiz API is ready
+          totalQuizzes,
           totalStudents: 0, // TODO: Implement when student API is ready
         });
       } catch (error) {

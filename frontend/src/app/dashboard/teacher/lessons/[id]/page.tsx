@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Trash2, Eye, EyeOff, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, Trash2, Eye, EyeOff, Loader2, Sparkles, Edit, Plus, CheckCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { LessonViewer } from '@/components/features/lessons/LessonViewer';
 
 import { lessonsApi } from '@/lib/api/lessons';
+import { quizzesApi } from '@/lib/api/quizzes';
 import type { Lesson } from '@/lib/types/lesson';
+import type { Quiz } from '@/lib/types/quiz';
 
 /**
  * Teacher Lesson Viewer Page
@@ -29,6 +32,11 @@ export default function TeacherLessonViewPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
+
+  // Quizzes state
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(false);
+  const [quizzesError, setQuizzesError] = useState<string | null>(null);
 
   // Fetch lesson on mount
   useEffect(() => {
@@ -101,9 +109,66 @@ export default function TeacherLessonViewPage() {
     router.push('/dashboard/teacher/lessons');
   };
 
+  // Fetch quizzes for this lesson
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      try {
+        setIsLoadingQuizzes(true);
+        setQuizzesError(null);
+
+        console.log('[Teacher Lesson View] Fetching quizzes for lesson:', lessonId);
+        const data = await quizzesApi.getQuizzes({ lessonId });
+        console.log('[Teacher Lesson View] Quizzes loaded:', data.quizzes.length);
+
+        setQuizzes(data.quizzes || []);
+      } catch (err: any) {
+        console.error('[Teacher Lesson View] Error fetching quizzes:', err);
+        const errorMsg =
+          err.response?.data?.error ||
+          err.message ||
+          'Failed to load quizzes';
+        setQuizzesError(errorMsg);
+      } finally {
+        setIsLoadingQuizzes(false);
+      }
+    };
+
+    if (lessonId) {
+      fetchQuizzes();
+    }
+  }, [lessonId]);
+
   // Handle navigate to quiz generator
   const handleGenerateQuiz = () => {
     router.push(`/dashboard/teacher/lessons/${lessonId}/quiz`);
+  };
+
+  // Handle navigate to quiz editor
+  const handleEditQuiz = (quizId: string) => {
+    router.push(`/dashboard/teacher/quizzes/${quizId}/edit`);
+  };
+
+  // Handle delete quiz
+  const handleDeleteQuiz = async (quizId: string) => {
+    const confirmed = window.confirm('Da li ste sigurni da želite da obrišete ovaj kviz?');
+    if (!confirmed) return;
+
+    try {
+      console.log('[Teacher Lesson View] Deleting quiz:', quizId);
+      await quizzesApi.deleteQuiz(quizId);
+
+      // Remove from local state
+      setQuizzes(prev => prev.filter(q => q.id !== quizId));
+
+      console.log('[Teacher Lesson View] Quiz deleted successfully');
+    } catch (err: any) {
+      console.error('[Teacher Lesson View] Error deleting quiz:', err);
+      const errorMsg =
+        err.response?.data?.error ||
+        err.message ||
+        'Failed to delete quiz';
+      alert(`Greška: ${errorMsg}`);
+    }
   };
 
   // Loading state
@@ -236,6 +301,131 @@ export default function TeacherLessonViewPage() {
 
       {/* Lesson content */}
       <LessonViewer lesson={lesson} showMetadata={true} />
+
+      {/* Quizzes Section */}
+      <Card className="mt-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Kvizovi za ovu lekciju</CardTitle>
+              <CardDescription>
+                Pregledajte i editujte kvizove vezane za ovu lekciju
+              </CardDescription>
+            </div>
+            <Button onClick={handleGenerateQuiz} size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Novi kviz
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoadingQuizzes ? (
+            <div className="py-8 flex flex-col items-center justify-center gap-4">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Učitavanje kvizova...</p>
+            </div>
+          ) : quizzesError ? (
+            <div className="py-8 text-center">
+              <p className="text-sm text-destructive">{quizzesError}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.reload()}
+                className="mt-4"
+              >
+                Pokušaj ponovo
+              </Button>
+            </div>
+          ) : quizzes.length === 0 ? (
+            <div className="py-12 text-center">
+              <div className="rounded-full bg-muted p-3 w-fit mx-auto mb-4">
+                <Sparkles className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Nema kvizova</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Još uvek niste kreirali kviz za ovu lekciju.
+              </p>
+              <Button onClick={handleGenerateQuiz} variant="outline">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Generiši kviz sa AI
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {quizzes.map((quiz) => (
+                <Card key={quiz.id} className="border-2">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between gap-4">
+                      {/* Quiz Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-semibold truncate">{quiz.title}</h4>
+                          {quiz.status === 'published' ? (
+                            <Badge className="bg-green-500 flex-shrink-0">
+                              <CheckCircle className="mr-1 h-3 w-3" />
+                              Objavljen
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="flex-shrink-0">
+                              Draft
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                          {quiz.questions && (
+                            <span>{quiz.questions.length} pitanja</span>
+                          )}
+                          {quiz.quizMetadata?.difficulty && (
+                            <Badge variant="outline" className="text-xs">
+                              {quiz.quizMetadata.difficulty === 'easy' && 'Lako'}
+                              {quiz.quizMetadata.difficulty === 'medium' && 'Srednje'}
+                              {quiz.quizMetadata.difficulty === 'hard' && 'Teško'}
+                            </Badge>
+                          )}
+                          {quiz.quizMetadata?.generatedBy === 'ai' && (
+                            <span className="flex items-center gap-1">
+                              <Sparkles className="h-3 w-3" />
+                              AI-generated
+                            </span>
+                          )}
+                          <span>
+                            {new Date(quiz.createdAt).toLocaleDateString('sr-RS', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditQuiz(quiz.id)}
+                        >
+                          <Edit className="mr-1 h-4 w-4" />
+                          Edituj
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteQuiz(quiz.id)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

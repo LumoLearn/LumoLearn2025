@@ -149,8 +149,8 @@ export default function QuizGeneratorPage() {
 
       console.log('[Quiz Generator] Quiz saved successfully:', result.quiz.id);
 
-      // Navigate to quiz editor or quiz list
-      router.push(`/dashboard/teacher/lessons/${lessonId}`);
+      // Navigate to quiz editor for immediate editing
+      router.push(`/dashboard/teacher/quizzes/${result.quiz.id}/edit`);
     } catch (err: any) {
       console.error('[Quiz Generator] Error saving quiz:', err);
       const errorMsg =
