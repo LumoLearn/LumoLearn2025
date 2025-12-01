@@ -7,6 +7,7 @@ import { postgresDb } from './config/postgres';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import healthRoutes from './routes/healthRoutes';
 import lessonRoutes from './routes/lessonRoutes';
+import quizRoutes from './routes/quizRoutes';
 import { getUploadConfig } from './config/multer';
 
 // Load environment variables
@@ -67,6 +68,9 @@ app.use('/health', healthRoutes);
 // Lesson routes
 app.use('/api/lessons', lessonRoutes);
 
+// Quiz routes
+app.use('/api/quizzes', quizRoutes);
+
 // Root route
 app.get('/', (req, res) => {
   const uploadConfig = getUploadConfig();
@@ -89,6 +93,16 @@ app.get('/', (req, res) => {
         unpublish: 'PUT /api/lessons/:id/unpublish',
         update: 'PUT /api/lessons/:id',
         delete: 'DELETE /api/lessons/:id',
+      },
+      quizzes: {
+        create: 'POST /api/quizzes',
+        list: 'GET /api/quizzes',
+        get: 'GET /api/quizzes/:id',
+        published: 'GET /api/quizzes/published',
+        update: 'PUT /api/quizzes/:id',
+        publish: 'POST /api/quizzes/:id/publish',
+        unpublish: 'POST /api/quizzes/:id/unpublish',
+        delete: 'DELETE /api/quizzes/:id',
       },
     },
     configuration: {
@@ -150,6 +164,10 @@ const startServer = async (): Promise<void> => {
       console.log(`  - List lessons:      GET http://localhost:${PORT}/api/lessons`);
       console.log(`  - Get lesson:        GET http://localhost:${PORT}/api/lessons/:id`);
       console.log(`  - Published lessons: GET http://localhost:${PORT}/api/lessons/published`);
+      console.log(`  - Create quiz:       POST http://localhost:${PORT}/api/quizzes`);
+      console.log(`  - List quizzes:      GET http://localhost:${PORT}/api/quizzes`);
+      console.log(`  - Get quiz:          GET http://localhost:${PORT}/api/quizzes/:id`);
+      console.log(`  - Published quizzes: GET http://localhost:${PORT}/api/quizzes/published`);
       console.log(`  - Service info:      http://localhost:${PORT}/`);
       console.log('');
     });

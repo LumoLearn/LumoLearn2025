@@ -6,6 +6,7 @@ import {
   JoinColumn,
   OneToMany,
   CreateDateColumn,
+  UpdateDateColumn,
   Index
 } from 'typeorm';
 import { Lesson } from './Lesson.entity';
@@ -35,6 +36,9 @@ export class Quiz {
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 
   // Relational mappings
   @ManyToOne(() => Lesson, lesson => lesson.quizzes, { nullable: true })
