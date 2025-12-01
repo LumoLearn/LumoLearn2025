@@ -50,7 +50,7 @@ export function LessonCard({ lesson, onUpdate }: LessonCardProps) {
    */
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('sr-RS', {
+    return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -84,7 +84,7 @@ export function LessonCard({ lesson, onUpdate }: LessonCardProps) {
       setError(
         err.response?.data?.error ||
         err.message ||
-        `Greška prilikom ${lesson.isPublished ? 'uklanjanja' : 'objavljivanja'} lekcije`
+        `Error ${lesson.isPublished ? 'unpublishing' : 'publishing'} lesson`
       );
     } finally {
       setIsPublishing(false);
@@ -108,7 +108,7 @@ export function LessonCard({ lesson, onUpdate }: LessonCardProps) {
       setError(
         err.response?.data?.error ||
         err.message ||
-        'Greška prilikom brisanja lekcije'
+        'Error deleting lesson'
       );
       setShowDeleteDialog(false);
     } finally {
@@ -124,14 +124,14 @@ export function LessonCard({ lesson, onUpdate }: LessonCardProps) {
       return (
         <Badge variant="success" className="flex items-center gap-1">
           <span className="w-2 h-2 bg-white rounded-full"></span>
-          Objavljena
+          Published
         </Badge>
       );
     }
     return (
       <Badge variant="secondary" className="flex items-center gap-1">
         <span className="w-2 h-2 bg-gray-500 rounded-full"></span>
-        Neobjavljana
+        Unpublished
       </Badge>
     );
   };
@@ -158,7 +158,7 @@ export function LessonCard({ lesson, onUpdate }: LessonCardProps) {
         <CardContent className="pb-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="w-4 h-4" />
-            <span>Kreirano: {formatDate(lesson.createdAt)}</span>
+            <span>Created: {formatDate(lesson.createdAt)}</span>
           </div>
 
           {lesson.metadata && (
@@ -187,7 +187,7 @@ export function LessonCard({ lesson, onUpdate }: LessonCardProps) {
             className="flex-1"
           >
             <Eye className="w-4 h-4 mr-1" />
-            Pregledaj
+            View
           </Button>
 
           {/* Publish/Unpublish Button */}
@@ -201,19 +201,19 @@ export function LessonCard({ lesson, onUpdate }: LessonCardProps) {
             {isPublishing ? (
               <>
                 <div className="w-4 h-4 mr-1 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                {lesson.isPublished ? 'Uklanjanje...' : 'Objavljivanje...'}
+                {lesson.isPublished ? 'Unpublishing...' : 'Publishing...'}
               </>
             ) : (
               <>
                 {lesson.isPublished ? (
                   <>
                     <DownloadIcon className="w-4 h-4 mr-1" />
-                    Ukloni
+                    Unpublish
                   </>
                 ) : (
                   <>
                     <UploadIcon className="w-4 h-4 mr-1" />
-                    Objavi
+                    Publish
                   </>
                 )}
               </>
@@ -236,10 +236,10 @@ export function LessonCard({ lesson, onUpdate }: LessonCardProps) {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Obriši lekciju</DialogTitle>
+            <DialogTitle>Delete Lesson</DialogTitle>
             <DialogDescription>
-              Da li ste sigurni da želite da obrišete lekciju &quot;{lesson.title}&quot;?
-              Ova akcija se ne može poništiti.
+              Are you sure you want to delete the lesson &quot;{lesson.title}&quot;?
+              This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -248,7 +248,7 @@ export function LessonCard({ lesson, onUpdate }: LessonCardProps) {
               onClick={() => setShowDeleteDialog(false)}
               disabled={isDeleting}
             >
-              Otkaži
+              Cancel
             </Button>
             <Button
               variant="destructive"
@@ -258,12 +258,12 @@ export function LessonCard({ lesson, onUpdate }: LessonCardProps) {
               {isDeleting ? (
                 <>
                   <div className="w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  Brisanje...
+                  Deleting...
                 </>
               ) : (
                 <>
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Obriši
+                  Delete
                 </>
               )}
             </Button>

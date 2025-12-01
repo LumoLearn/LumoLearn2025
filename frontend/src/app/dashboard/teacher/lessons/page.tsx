@@ -24,9 +24,9 @@ const FILTER_OPTIONS: Array<{
   label: string;
   description: string;
 }> = [
-  { value: 'all', label: 'Sve', description: 'Prikaži sve lekcije' },
-  { value: 'published', label: 'Objavljene', description: 'Prikaži samo objavljene lekcije' },
-  { value: 'unpublished', label: 'Neobjavljene', description: 'Prikaži samo neobjavljene lekcije' },
+  { value: 'all', label: 'All', description: 'Show all lessons' },
+  { value: 'published', label: 'Published', description: 'Show only published lessons' },
+  { value: 'unpublished', label: 'Unpublished', description: 'Show only unpublished lessons' },
 ];
 
 /**
@@ -62,7 +62,7 @@ export default function TeacherLessonsPage() {
       setError(
         err.response?.data?.error ||
         err.message ||
-        'Greška prilikom učitavanja lekcija'
+        'Error loading lessons'
       );
     } finally {
       setIsLoading(false);
@@ -135,14 +135,14 @@ export default function TeacherLessonsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Moje Lekcije</h1>
+          <h1 className="text-3xl font-bold tracking-tight">My Lessons</h1>
           <p className="text-muted-foreground mt-1">
-            Upravljajte vašim lekcijama i sadržajem
+            Manage your lessons and content
           </p>
         </div>
         <Button onClick={handleCreateLesson} size="lg">
           <Plus className="w-5 h-5 mr-2" />
-          Nova Lekcija
+          New Lesson
         </Button>
       </div>
 
@@ -190,7 +190,7 @@ export default function TeacherLessonsPage() {
       {isLoading && (
         <div className="flex flex-col items-center justify-center py-16">
           <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-          <p className="text-muted-foreground">Učitavanje lekcija...</p>
+          <p className="text-muted-foreground">Loading lessons...</p>
         </div>
       )}
 
@@ -201,7 +201,7 @@ export default function TeacherLessonsPage() {
             <AlertCircle className="w-8 h-8 text-destructive flex-shrink-0" />
             <div>
               <h3 className="font-semibold text-destructive mb-1">
-                Greška prilikom učitavanja
+                Error loading
               </h3>
               <p className="text-sm text-muted-foreground">{error}</p>
               <Button
@@ -210,7 +210,7 @@ export default function TeacherLessonsPage() {
                 onClick={fetchLessons}
                 className="mt-3"
               >
-                Pokušaj ponovo
+                Try again
               </Button>
             </div>
           </CardContent>
@@ -225,29 +225,29 @@ export default function TeacherLessonsPage() {
               <FileText className="w-8 h-8 text-primary" />
             </div>
             <h3 className="text-xl font-semibold mb-2">
-              {activeFilter === 'all' && 'Nemate kreiranih lekcija'}
-              {activeFilter === 'published' && 'Nemate objavljenih lekcija'}
-              {activeFilter === 'unpublished' && 'Nemate neobjavljenih lekcija'}
+              {activeFilter === 'all' && 'No lessons created'}
+              {activeFilter === 'published' && 'No published lessons'}
+              {activeFilter === 'unpublished' && 'No unpublished lessons'}
             </h3>
             <p className="text-muted-foreground mb-6 max-w-md">
               {activeFilter === 'all' &&
-                'Započnite kreiranjem vaše prve lekcije. Upload-ujte Word ili PDF dokument i podelite znanje sa učenicima.'}
+                'Start by creating your first lesson. Upload a Word or PDF document and share knowledge with students.'}
               {activeFilter === 'published' &&
-                'Nemate lekcija koje su objavljene. Objavite lekciju da bi bila dostupna učenicima.'}
+                'You have no published lessons. Publish a lesson to make it available to students.'}
               {activeFilter === 'unpublished' &&
-                'Sve vaše lekcije su objavljene. Odličan posao!'}
+                'All your lessons are published. Great job!'}
             </p>
             {activeFilter === 'all' ? (
               <Button onClick={handleCreateLesson} size="lg">
                 <Plus className="w-5 h-5 mr-2" />
-                Kreiraj Prvu Lekciju
+                Create First Lesson
               </Button>
             ) : (
               <Button
                 variant="outline"
                 onClick={() => handleFilterChange('all')}
               >
-                Prikaži sve lekcije
+                Show all lessons
               </Button>
             )}
           </CardContent>
@@ -258,7 +258,7 @@ export default function TeacherLessonsPage() {
       {!isLoading && !error && filteredLessons.length > 0 && (
         <>
           <div className="mb-4 text-sm text-muted-foreground">
-            Prikazano {filteredLessons.length} od {stats.total} lekcija
+            Showing {filteredLessons.length} of {stats.total} lessons
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredLessons.map((lesson) => (
