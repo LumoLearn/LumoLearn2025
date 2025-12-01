@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Trash2, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Eye, EyeOff, Loader2, Sparkles } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -101,6 +101,11 @@ export default function TeacherLessonViewPage() {
     router.push('/dashboard/teacher/lessons');
   };
 
+  // Handle navigate to quiz generator
+  const handleGenerateQuiz = () => {
+    router.push(`/dashboard/teacher/lessons/${lessonId}/quiz`);
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -173,13 +178,20 @@ export default function TeacherLessonViewPage() {
   return (
     <div className="container mx-auto max-w-5xl py-8 px-4">
       {/* Header with actions */}
-      <div className="mb-6 flex items-center justify-between gap-4">
+      <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
         <Button variant="outline" onClick={handleBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Lessons
         </Button>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleGenerateQuiz}
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate Quiz with AI
+          </Button>
           <Button
             variant={lesson.isPublished ? 'outline' : 'default'}
             onClick={handleTogglePublish}
