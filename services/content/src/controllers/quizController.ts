@@ -10,6 +10,8 @@ import {
   deleteQuiz,
   isQuizOwner,
   getTeacherIdByUserId,
+  getStudentIdByUserId,
+  submitQuizAnswers,
   QuizQuestion,
 } from '../services/quizService';
 
@@ -649,6 +651,84 @@ export const deleteQuizById = async (
     });
   } catch (error) {
     console.error('Error deleting quiz:', error);
+    next(error);
+  }
+};
+
+/**
+ * Submit quiz answers (BE-014)
+ *
+ * POST /api/quizzes/:id/submit
+ *
+ * @param id - Quiz ID
+ * @body answers - Object with answers in format { "question1": "A", "question2": "B", ... }
+ *
+ * @access Protected (Student only)
+ */
+export const submitQuiz = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    // Validate user authentication
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: 'Authentication required',
+      });
+      return;
+    }
+
+    // Get student ID from user ID
+    const studentId = await getStudentIdByUserId(req.user.userId);
+    if (!studentId) {
+      res.status(403).json({
+        success: false,
+        error: 'User is not registered as a student',
+      });
+      return;
+    }
+
+    const quizId = req.params.id;
+
+    // Validate answers
+    const answers = req.body.answers;
+    if (!answers || typeof answers !== 'object' || Object.keys(answers).length === 0) {
+      res.status(400).json({
+        success: false,
+        error: 'Answers object is required and must not be empty',
+      });
+      return;
+    }
+
+    // Submit quiz and calculate results
+    const result = await submitQuizAnswers(quizId, studentId, answers);
+
+    res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (error: any) {
+    console.error('Error submitting quiz:', error);
+
+    // Handle specific errors
+    if (error.message === 'Quiz not found or has no questions') {
+      res.status(404).json({
+        success: false,
+        error: error.message,
+      });
+      return;
+    }
+
+    if (error.message === 'Quiz is not published yet') {
+      res.status(403).json({
+        success: false,
+        error: error.message,
+      });
+      return;
+    }
+
     next(error);
   }
 };

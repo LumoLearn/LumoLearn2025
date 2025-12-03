@@ -9,6 +9,7 @@ import {
   publishQuiz,
   unpublishQuiz,
   deleteQuizById,
+  submitQuiz,
 } from '../controllers/quizController';
 
 /**
@@ -105,6 +106,18 @@ router.delete(
   authenticateToken,
   requireRole(['teacher']),
   deleteQuizById
+);
+
+/**
+ * @route   POST /api/quizzes/:id/submit
+ * @desc    Submit quiz answers (BE-014)
+ * @access  Protected (Student only)
+ */
+router.post(
+  '/:id/submit',
+  authenticateToken,
+  requireRole(['student']),
+  submitQuiz
 );
 
 export default router;

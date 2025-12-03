@@ -413,3 +413,121 @@ export const getTeacherIdByUserId = async (
   const result = await postgresDb.query<{ id: string }>(query, [userId]);
   return result.rows[0]?.id || null;
 };
+
+/**
+ * Get student ID from user ID
+ * Students table has a user_id that maps to the auth user
+ */
+export const getStudentIdByUserId = async (
+  userId: string
+): Promise<string | null> => {
+  const query = `
+    SELECT id FROM students WHERE user_id = $1
+  `;
+
+  const result = await postgresDb.query<{ id: string }>(query, [userId]);
+  return result.rows[0]?.id || null;
+};
+
+/**
+ * Quiz submission result for a single question
+ */
+export interface QuestionResult {
+  question: string;
+  userAnswer: string;
+  correctAnswer: string;
+  isCorrect: boolean;
+}
+
+/**
+ * Quiz submission response
+ */
+export interface QuizSubmissionResult {
+  attemptId: string;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  results: QuestionResult[];
+}
+
+/**
+ * Submit quiz answers and calculate score
+ */
+export const submitQuizAnswers = async (
+  quizId: string,
+  studentId: string,
+  answers: Record<string, string>
+): Promise<QuizSubmissionResult> => {
+  // Get quiz with content including correct answers
+  const quiz = await getQuizWithContent(quizId, true);
+
+  if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+    throw new Error('Quiz not found or has no questions');
+  }
+
+  // Validate quiz is published
+  if (quiz.status !== 'published') {
+    throw new Error('Quiz is not published yet');
+  }
+
+  // Calculate score and prepare results
+  const results: QuestionResult[] = [];
+  let correctCount = 0;
+
+  quiz.questions.forEach((question, index) => {
+    const questionKey = `question${index + 1}`;
+    const userAnswer = answers[questionKey] || '';
+
+    // Normalize answers - extract just the letter (A, B, C, D) if full text is provided
+    // Support both formats: "B" or "B) Full text answer"
+    const normalizedUserAnswer = userAnswer.trim().charAt(0).toUpperCase();
+    const normalizedCorrectAnswer = question.correctAnswer.trim().charAt(0).toUpperCase();
+
+    const isCorrect = normalizedUserAnswer === normalizedCorrectAnswer;
+
+    if (isCorrect) {
+      correctCount++;
+    }
+
+    results.push({
+      question: question.question,
+      userAnswer,
+      correctAnswer: question.correctAnswer,
+      isCorrect,
+    });
+  });
+
+  const totalQuestions = quiz.questions.length;
+  const percentage = Math.round((correctCount / totalQuestions) * 100);
+
+  // Save quiz attempt to PostgreSQL
+  const query = `
+    INSERT INTO quiz_attempts (quiz_id, student_id, score, answers, submitted_at)
+    VALUES ($1, $2, $3, $4, NOW())
+    RETURNING id, quiz_id as "quizId", student_id as "studentId", score, answers, submitted_at as "submittedAt"
+  `;
+
+  const result = await postgresDb.query<{
+    id: string;
+    quizId: string;
+    studentId: string;
+    score: number;
+    answers: Record<string, string>;
+    submittedAt: Date;
+  }>(query, [
+    quizId,
+    studentId,
+    correctCount,
+    JSON.stringify(answers),
+  ]);
+
+  const attempt = result.rows[0];
+
+  return {
+    attemptId: attempt.id,
+    score: correctCount,
+    totalQuestions,
+    percentage,
+    results,
+  };
+};
