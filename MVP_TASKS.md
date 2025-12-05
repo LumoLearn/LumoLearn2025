@@ -1563,7 +1563,7 @@ Napisati testove za kritične komponente.
 | 3-4 | BE-004, BE-005, BE-006 | FE-004, FE-005 | ✅ Complete |
 | 5-6 | BE-007, BE-008, BE-009, BE-010 | FE-006, FE-007, FE-008 | 🟡 In Progress (BE-007 ✅) |
 | 7-8 | BE-011, BE-012, BE-013 | FE-009, FE-010 | 🔴 Not Started |
-| 9-10 | BE-014, BE-015 | FE-011, FE-012 | 🔴 Not Started |
+| 9-10 | BE-014, BE-015 | FE-011, FE-012 | 🟡 In Progress (BE-015 ✅) |
 | 11-12 | BE-016, BE-017 | FE-013 | 🔴 Not Started |
 
 ---

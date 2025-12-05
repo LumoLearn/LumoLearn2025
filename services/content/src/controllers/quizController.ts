@@ -276,8 +276,12 @@ export const listQuizzes = async (
  * @query lessonId - Filter by lesson ID
  * @query limit - Number of quizzes to return (default: 20)
  * @query offset - Number of quizzes to skip (default: 0)
+ * @query sortBy - Sort field (created_at, updated_at, title)
+ * @query sortOrder - Sort order (ASC, DESC)
  *
  * @access Protected (All authenticated users)
+ * 
+ * BE-015: Returns published quizzes WITHOUT correct answers for students
  */
 export const getPublishedQuizzes = async (
   req: Request,
@@ -294,27 +298,64 @@ export const getPublishedQuizzes = async (
       return;
     }
 
-    // Parse query parameters
+    // Parse query parameters with validation
     const lessonId = req.query.lessonId as string | undefined;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const offset = parseInt(req.query.offset as string) || 0;
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit as string) || 20, 1),
+      100
+    );
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+    
+    // Parse sort parameters
+    const validSortFields = ['created_at', 'updated_at', 'title'];
+    const sortBy = validSortFields.includes(req.query.sortBy as string)
+      ? (req.query.sortBy as 'created_at' | 'updated_at' | 'title')
+      : 'created_at';
+    const sortOrder = (req.query.sortOrder as string)?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
-    // Get published quizzes (without correct answers)
+    // Get published quizzes metadata
     const result = await listQuizzesService({
       status: 'published',
       lessonId,
       limit,
       offset,
-      sortBy: 'created_at',
-      sortOrder: 'DESC',
+      sortBy,
+      sortOrder,
     });
+
+    // For each quiz, fetch content WITHOUT correct answers
+    const quizzesWithQuestions = await Promise.all(
+      result.quizzes.map(async (quiz) => {
+        // Get quiz with content but WITHOUT correct answers (includeAnswers = false)
+        const quizWithContent = await getQuizWithContent(quiz.id, false);
+        
+        if (quizWithContent && quizWithContent.questions) {
+          return {
+            id: quiz.id,
+            title: quiz.title,
+            lessonId: quiz.lessonId,
+            status: quiz.status,
+            createdAt: quiz.createdAt,
+            updatedAt: quiz.updatedAt,
+            questions: quizWithContent.questions,
+            metadata: quizWithContent.quizMetadata,
+          };
+        }
+        
+        // Fallback if content not found
+        return quiz;
+      })
+    );
 
     res.status(200).json({
       success: true,
-      quizzes: result.quizzes,
-      total: result.total,
-      limit,
-      offset,
+      quizzes: quizzesWithQuestions,
+      pagination: {
+        total: result.total,
+        limit,
+        offset,
+        hasMore: offset + quizzesWithQuestions.length < result.total,
+      },
     });
   } catch (error) {
     console.error('Error getting published quizzes:', error);
