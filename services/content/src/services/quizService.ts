@@ -434,6 +434,7 @@ export const getStudentIdByUserId = async (
  */
 export interface QuestionResult {
   question: string;
+  options: string[];
   userAnswer: string;
   correctAnswer: string;
   isCorrect: boolean;
@@ -475,8 +476,10 @@ export const submitQuizAnswers = async (
   let correctCount = 0;
 
   quiz.questions.forEach((question, index) => {
-    const questionKey = `question${index + 1}`;
-    const userAnswer = answers[questionKey] || '';
+    // Try both index formats: question0, question1, etc. (0-based) and question1, question2, etc. (1-based)
+    const questionKey0 = `question${index}`;
+    const questionKey1 = `question${index + 1}`;
+    const userAnswer = answers[questionKey0] || answers[questionKey1] || '';
 
     // Normalize answers - extract just the letter (A, B, C, D) if full text is provided
     // Support both formats: "B" or "B) Full text answer"
@@ -491,6 +494,7 @@ export const submitQuizAnswers = async (
 
     results.push({
       question: question.question,
+      options: question.options,
       userAnswer,
       correctAnswer: question.correctAnswer,
       isCorrect,
