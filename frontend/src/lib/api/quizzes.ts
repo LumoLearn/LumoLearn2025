@@ -7,6 +7,8 @@ import type {
   QuizzesListResponse,
   UpdateQuizRequest,
   QuizFilters,
+  QuizSubmissionRequest,
+  QuizSubmissionResponse,
 } from '@/lib/types/quiz';
 
 const CONTENT_SERVICE_URL = process.env.NEXT_PUBLIC_CONTENT_API_URL || 'http://localhost:3002';
@@ -137,6 +139,21 @@ export const quizzesApi = {
 
     const response = await apiClient.get<QuizzesListResponse>(
       `${CONTENT_SERVICE_URL}/api/quizzes/published${params.toString() ? `?${params.toString()}` : ''}`
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Submit quiz answers (for students)
+   * @param quizId - Quiz ID
+   * @param answers - Object mapping question indices to selected answers
+   * @returns Promise with score and detailed results
+   */
+  async submitQuiz(quizId: string, answers: Record<string, string>): Promise<QuizSubmissionResponse> {
+    const response = await apiClient.post<QuizSubmissionResponse>(
+      `${CONTENT_SERVICE_URL}/api/quizzes/${quizId}/submit`,
+      { answers }
     );
 
     return response.data;

@@ -41,6 +41,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
       return [
         { href: '/dashboard/student', label: 'Dashboard' },
         { href: '/dashboard/student/lessons', label: 'Lessons' },
+        { href: '/dashboard/student/quizzes', label: 'Quizzes' },
         { href: '/dashboard/student/settings', label: 'Settings' },
         { href: '/dashboard/profile', label: 'Profile' },
       ];

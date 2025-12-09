@@ -122,3 +122,35 @@ export interface GenerateQuizResponse {
   };
   error?: string;
 }
+
+/**
+ * Quiz submission request payload
+ * Maps question index to selected answer
+ */
+export interface QuizSubmissionRequest {
+  answers: Record<string, string>; // { "question0": "A", "question1": "B", ... }
+}
+
+/**
+ * Single question result after quiz submission
+ */
+export interface QuizQuestionResult {
+  question: string;
+  options: string[];
+  userAnswer: string;
+  correctAnswer: string;
+  isCorrect: boolean;
+}
+
+/**
+ * Quiz submission response with score and detailed results
+ */
+export interface QuizSubmissionResponse {
+  success: boolean;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  results: QuizQuestionResult[];
+  attemptId?: string;
+  submittedAt?: string;
+}
