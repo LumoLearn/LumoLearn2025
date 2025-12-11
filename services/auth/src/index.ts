@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
 import studentRoutes from './routes/studentRoutes';
 import userRoutes from './routes/userRoutes';
+import parentRoutes from './routes/parentRoutes';
 import { AppDataSource } from './config/typeorm.config';
 import { User } from './entities/User.entity';
 
@@ -31,6 +32,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/parents', parentRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

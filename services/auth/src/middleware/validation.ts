@@ -107,6 +107,18 @@ export const accessibilitySettingsValidation = [
 ];
 
 /**
+ * Validation rules for linking student to parent
+ */
+export const linkStudentValidation = [
+  // Student ID validation
+  body('studentId')
+    .notEmpty()
+    .withMessage('Student ID is required')
+    .isUUID()
+    .withMessage('Student ID must be a valid UUID')
+];
+
+/**
  * Middleware to handle validation errors
  *
  * This should be used after validation rules to check if there are any errors
