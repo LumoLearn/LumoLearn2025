@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getSettings, updateSettings } from '../controllers/studentController';
+import { getSettings, updateSettings, getStudentProgress } from '../controllers/studentController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import {
   accessibilitySettingsValidation,
@@ -32,6 +32,18 @@ router.put(
   accessibilitySettingsValidation,
   handleValidationErrors,
   updateSettings
+);
+
+/**
+ * @route   GET /api/students/:id/progress
+ * @desc    Get student progress and analytics (quiz attempts, scores, statistics)
+ * @access  Protected (Student can access their own progress, Parent can access their children's progress)
+ */
+router.get(
+  '/:id/progress',
+  authenticateToken,
+  requireRole(['student', 'parent']), // Student or Parent can access
+  getStudentProgress
 );
 
 export default router;
