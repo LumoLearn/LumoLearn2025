@@ -1,12 +1,53 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth.store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { lessonsApi } from '@/lib/api/lessons';
+import { quizzesApi } from '@/lib/api/quizzes';
+import parentService from '@/lib/api/parent';
 
 export default function StudentDashboard() {
   const { user } = useAuthStore();
+  const [lessonsCount, setLessonsCount] = useState(0);
+  const [quizzesCount, setQuizzesCount] = useState(0);
+  const [completionRate, setCompletionRate] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [user]);
+
+  const loadDashboardData = async () => {
+    if (!user) return;
+
+    try {
+      setIsLoading(true);
+
+      // Load published lessons
+      const lessonsResponse = await lessonsApi.getPublishedLessons();
+      setLessonsCount(lessonsResponse.lessons?.length || 0);
+
+      // Load published quizzes
+      const quizzesResponse = await quizzesApi.getPublishedQuizzes();
+      setQuizzesCount(quizzesResponse.quizzes?.length || 0);
+
+      // Load student progress to calculate completion rate
+      try {
+        const progress = await parentService.getStudentProgress(user.id);
+        setCompletionRate(Math.round(progress.completionRate) || 0);
+      } catch (err) {
+        // If no progress yet, keep at 0
+        console.log('No progress data yet');
+      }
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -25,7 +66,11 @@ export default function StudentDashboard() {
             <CardTitle>My Lessons</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">0</p>
+            {isLoading ? (
+              <p className="text-2xl font-bold animate-pulse">...</p>
+            ) : (
+              <p className="text-2xl font-bold">{lessonsCount}</p>
+            )}
             <p className="text-xs text-muted-foreground">
               Available lessons to study
             </p>
@@ -37,9 +82,13 @@ export default function StudentDashboard() {
             <CardTitle>Quizzes</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">0</p>
+            {isLoading ? (
+              <p className="text-2xl font-bold animate-pulse">...</p>
+            ) : (
+              <p className="text-2xl font-bold">{quizzesCount}</p>
+            )}
             <p className="text-xs text-muted-foreground">
-              Pending quizzes to complete
+              Available quizzes to complete
             </p>
           </CardContent>
         </Card>
@@ -49,7 +98,11 @@ export default function StudentDashboard() {
             <CardTitle>Progress</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">0%</p>
+            {isLoading ? (
+              <p className="text-2xl font-bold animate-pulse">...</p>
+            ) : (
+              <p className="text-2xl font-bold">{completionRate}%</p>
+            )}
             <p className="text-xs text-muted-foreground">
               Overall completion rate
             </p>
