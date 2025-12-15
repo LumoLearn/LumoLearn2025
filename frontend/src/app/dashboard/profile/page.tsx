@@ -259,8 +259,35 @@ export default function ProfilePage() {
 
             {/* Role-specific information display */}
             {profile?.student && (
-              <div className="rounded-lg border bg-muted/50 p-4">
+              <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
                 <h3 className="mb-2 font-semibold">Student Information</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="studentId">Student ID</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="studentId"
+                      type="text"
+                      value={profile.id}
+                      disabled
+                      className="bg-background font-mono text-sm"
+                      aria-readonly="true"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(profile.id);
+                        setSuccessMessage('Student ID copied to clipboard!');
+                        setTimeout(() => setSuccessMessage(null), 2000);
+                      }}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Share this ID with your parent to link your account.
+                  </p>
+                </div>
                 <p className="text-sm text-muted-foreground">
                   Accessibility settings are configured.
                 </p>

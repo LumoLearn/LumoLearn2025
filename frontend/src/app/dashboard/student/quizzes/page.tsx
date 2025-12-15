@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, BookOpen, Search, AlertCircle, Brain, Clock, BarChart3 } from 'lucide-react';
+import { Loader2, BookOpen, Search, AlertCircle, Brain, Clock, BarChart3, CheckCircle2 } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useAuthStore } from '@/store/auth.store';
 
 import { quizzesApi } from '@/lib/api/quizzes';
+import parentService from '@/lib/api/parent';
 import type { Quiz } from '@/lib/types/quiz';
 
 /**
@@ -26,14 +28,16 @@ import type { Quiz } from '@/lib/types/quiz';
  */
 export default function StudentQuizzesPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [filteredQuizzes, setFilteredQuizzes] = useState<Quiz[]>([]);
+  const [completedQuizIds, setCompletedQuizIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   /**
-   * Fetch published quizzes on component mount
+   * Fetch published quizzes and student progress on component mount
    */
   useEffect(() => {
     const fetchQuizzes = async () => {
@@ -48,6 +52,18 @@ export default function StudentQuizzesPage() {
         const fetchedQuizzes = response.quizzes || [];
         setQuizzes(fetchedQuizzes);
         setFilteredQuizzes(fetchedQuizzes);
+
+        // Fetch student progress to get completed quizzes
+        if (user) {
+          try {
+            const progress = await parentService.getStudentProgress(user.id);
+            const completed = new Set(progress.recentAttempts.map(attempt => attempt.quizId));
+            setCompletedQuizIds(completed);
+            console.log('[Student Quizzes] Completed quiz IDs:', Array.from(completed));
+          } catch (err) {
+            console.log('[Student Quizzes] No progress data yet');
+          }
+        }
       } catch (err: any) {
         console.error('[Student Quizzes] Error fetching quizzes:', err);
         const errorMsg =
@@ -61,7 +77,7 @@ export default function StudentQuizzesPage() {
     };
 
     fetchQuizzes();
-  }, []);
+  }, [user]);
 
   /**
    * Filter quizzes based on search query
@@ -286,52 +302,65 @@ export default function StudentQuizzesPage() {
 
       {/* Quizzes grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredQuizzes.map((quiz) => (
-          <Card key={quiz.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div className="rounded-full bg-primary/10 p-2">
-                  <Brain className="h-5 w-5 text-primary" />
+        {filteredQuizzes.map((quiz) => {
+          const isCompleted = completedQuizIds.has(quiz.id);
+
+          return (
+            <Card key={quiz.id} className={`hover:shadow-lg transition-shadow ${isCompleted ? 'border-green-200 dark:border-green-900' : ''}`}>
+              <CardHeader>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="rounded-full bg-primary/10 p-2">
+                    <Brain className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex gap-2">
+                    {isCompleted && (
+                      <Badge variant="success" className="flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Completed
+                      </Badge>
+                    )}
+                    {quiz.quizMetadata?.difficulty && (
+                      <Badge variant={getDifficultyVariant(quiz.quizMetadata.difficulty)}>
+                        {quiz.quizMetadata.difficulty}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-                {quiz.quizMetadata?.difficulty && (
-                  <Badge variant={getDifficultyVariant(quiz.quizMetadata.difficulty)}>
-                    {quiz.quizMetadata.difficulty}
-                  </Badge>
-                )}
-              </div>
-              <CardTitle className="line-clamp-2">{quiz.title}</CardTitle>
-              <CardDescription>
-                {quiz.lessonId ? 'Lesson Quiz' : 'Practice Quiz'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                {quiz.quizMetadata?.numQuestions && (
-                  <div className="flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4" />
-                    <span>{quiz.quizMetadata.numQuestions} questions</span>
-                  </div>
-                )}
-                {quiz.quizMetadata?.generatedBy && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    <span>
-                      {quiz.quizMetadata.generatedBy === 'ai' ? 'AI Generated' : 'Manual'}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button
-                className="w-full"
-                onClick={() => handleStartQuiz(quiz.id)}
-              >
-                Start Quiz
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
+                <CardTitle className="line-clamp-2">{quiz.title}</CardTitle>
+                <CardDescription>
+                  {quiz.lessonId ? 'Lesson Quiz' : 'Practice Quiz'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  {quiz.quizMetadata?.numQuestions && (
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4" />
+                      <span>{quiz.quizMetadata.numQuestions} questions</span>
+                    </div>
+                  )}
+                  {quiz.quizMetadata?.generatedBy && (
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      <span>
+                        {quiz.quizMetadata.generatedBy === 'ai' ? 'AI Generated' : 'Manual'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  className="w-full"
+                  onClick={() => handleStartQuiz(quiz.id)}
+                  variant={isCompleted ? 'outline' : 'default'}
+                >
+                  {isCompleted ? 'Retake Quiz' : 'Start Quiz'}
+                </Button>
+              </CardFooter>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
