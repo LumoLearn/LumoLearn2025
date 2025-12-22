@@ -23,6 +23,9 @@ export class QuizAttempt {
   @Column({ type: 'integer', nullable: true })
   score: number | null;
 
+  @Column({ name: 'total_questions', type: 'integer', nullable: true })
+  totalQuestions: number | null;
+
   @Column({ type: 'jsonb', nullable: true })
   answers: any; // Flexible JSON structure for quiz answers
 

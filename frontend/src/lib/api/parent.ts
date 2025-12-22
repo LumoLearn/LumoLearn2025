@@ -46,8 +46,8 @@ export const getStudentProgress = async (studentId: string): Promise<StudentProg
       quizId: attempt.quizId,
       quizTitle: attempt.quizTitle,
       score: attempt.score || 0,
-      totalQuestions: attempt.totalQuestions || 10, // Default to 10 if not provided
-      percentage: attempt.score || 0,
+      totalQuestions: attempt.totalQuestions || 0,
+      percentage: attempt.percentage || 0,
       submittedAt: attempt.submittedAt
     }));
 
@@ -59,23 +59,23 @@ export const getStudentProgress = async (studentId: string): Promise<StudentProg
     };
 
     const bestPerformance = data.statistics?.bestPerformance ? {
-      id: '',
-      quizId: '',
+      id: data.statistics.bestPerformance.id || '',
+      quizId: data.statistics.bestPerformance.quizId || '',
       quizTitle: data.statistics.bestPerformance.quizTitle,
       score: data.statistics.bestPerformance.score || 0,
-      totalQuestions: 10,
-      percentage: data.statistics.bestPerformance.score || 0,
-      submittedAt: data.statistics.bestPerformance.date
+      totalQuestions: data.statistics.bestPerformance.totalQuestions || 0,
+      percentage: data.statistics.bestPerformance.percentage || 0,
+      submittedAt: data.statistics.bestPerformance.submittedAt
     } : null;
 
     const worstPerformance = data.statistics?.worstPerformance ? {
-      id: '',
-      quizId: '',
+      id: data.statistics.worstPerformance.id || '',
+      quizId: data.statistics.worstPerformance.quizId || '',
       quizTitle: data.statistics.worstPerformance.quizTitle,
       score: data.statistics.worstPerformance.score || 0,
-      totalQuestions: 10,
-      percentage: data.statistics.worstPerformance.score || 0,
-      submittedAt: data.statistics.worstPerformance.date
+      totalQuestions: data.statistics.worstPerformance.totalQuestions || 0,
+      percentage: data.statistics.worstPerformance.percentage || 0,
+      submittedAt: data.statistics.worstPerformance.submittedAt
     } : null;
 
     const progress: StudentProgress = {

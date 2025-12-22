@@ -287,12 +287,13 @@ export const getStudentProgress = async (req: AuthRequest, res: Response): Promi
 
     // Calculate statistics
     const totalAttempts = attempts.length;
-    
-    // Calculate average score (only from attempts with non-null scores)
-    const attemptsWithScores = attempts.filter(a => a.score !== null);
-    const totalScore = attemptsWithScores.reduce((sum, a) => sum + (a.score || 0), 0);
-    const averageScore = attemptsWithScores.length > 0 
-      ? Math.round((totalScore / attemptsWithScores.length) * 100) / 100 
+
+    // Calculate average score as percentage (only from attempts with non-null scores and totalQuestions)
+    const attemptsWithScores = attempts.filter(a => a.score !== null && a.totalQuestions !== null && a.totalQuestions > 0);
+    const percentages = attemptsWithScores.map(a => Math.round(((a.score || 0) / (a.totalQuestions || 1)) * 100));
+    const totalPercentage = percentages.reduce((sum, p) => sum + p, 0);
+    const averageScore = attemptsWithScores.length > 0
+      ? Math.round((totalPercentage / attemptsWithScores.length) * 100) / 100
       : 0;
 
     // Count unique quizzes taken
@@ -300,29 +301,37 @@ export const getStudentProgress = async (req: AuthRequest, res: Response): Promi
     const totalQuizzesTaken = uniqueQuizIds.size;
 
     // Get recent attempts (last 10)
-    const recentAttempts = attempts.slice(0, 10).map(attempt => ({
-      id: attempt.id,
-      quizId: attempt.quizId,
-      quizTitle: attempt.quiz?.title || 'Unknown Quiz',
-      score: attempt.score,
-      submittedAt: attempt.submittedAt,
-      answers: attempt.answers
-    }));
+    const recentAttempts = attempts.slice(0, 10).map(attempt => {
+      const score = attempt.score || 0;
+      const totalQuestions = attempt.totalQuestions || 0;
+      const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
+
+      return {
+        id: attempt.id,
+        quizId: attempt.quizId,
+        quizTitle: attempt.quiz?.title || 'Unknown Quiz',
+        score: score,
+        totalQuestions: totalQuestions,
+        percentage: percentage,
+        submittedAt: attempt.submittedAt,
+        answers: attempt.answers
+      };
+    });
 
     // Calculate performance statistics
-    // Group attempts by score ranges
+    // Group attempts by score ranges (based on percentage)
     const scoreRanges = {
-      excellent: 0,  // 90-100
-      good: 0,       // 70-89
-      average: 0,    // 50-69
-      needsWork: 0   // 0-49
+      excellent: 0,  // 90-100%
+      good: 0,       // 70-89%
+      average: 0,    // 50-69%
+      needsWork: 0   // 0-49%
     };
 
     attemptsWithScores.forEach(attempt => {
-      const score = attempt.score || 0;
-      if (score >= 90) scoreRanges.excellent++;
-      else if (score >= 70) scoreRanges.good++;
-      else if (score >= 50) scoreRanges.average++;
+      const percentage = Math.round(((attempt.score || 0) / (attempt.totalQuestions || 1)) * 100);
+      if (percentage >= 90) scoreRanges.excellent++;
+      else if (percentage >= 70) scoreRanges.good++;
+      else if (percentage >= 50) scoreRanges.average++;
       else scoreRanges.needsWork++;
     });
 
@@ -331,30 +340,46 @@ export const getStudentProgress = async (req: AuthRequest, res: Response): Promi
       ? Math.round((attemptsWithScores.length / totalAttempts) * 100)
       : 0;
 
-    // Find best and worst performances
-    const sortedByScore = [...attemptsWithScores].sort((a, b) => (b.score || 0) - (a.score || 0));
-    const bestPerformance = sortedByScore.length > 0 ? {
-      quizTitle: sortedByScore[0].quiz?.title || 'Unknown Quiz',
-      score: sortedByScore[0].score,
-      date: sortedByScore[0].submittedAt
+    // Find best and worst performances (based on percentage)
+    const sortedByPercentage = [...attemptsWithScores].sort((a, b) => {
+      const percentageA = ((a.score || 0) / (a.totalQuestions || 1)) * 100;
+      const percentageB = ((b.score || 0) / (b.totalQuestions || 1)) * 100;
+      return percentageB - percentageA;
+    });
+
+    const bestPerformance = sortedByPercentage.length > 0 ? {
+      id: sortedByPercentage[0].id,
+      quizId: sortedByPercentage[0].quizId,
+      quizTitle: sortedByPercentage[0].quiz?.title || 'Unknown Quiz',
+      score: sortedByPercentage[0].score || 0,
+      totalQuestions: sortedByPercentage[0].totalQuestions || 0,
+      percentage: Math.round(((sortedByPercentage[0].score || 0) / (sortedByPercentage[0].totalQuestions || 1)) * 100),
+      submittedAt: sortedByPercentage[0].submittedAt
     } : null;
 
-    const worstPerformance = sortedByScore.length > 0 ? {
-      quizTitle: sortedByScore[sortedByScore.length - 1].quiz?.title || 'Unknown Quiz',
-      score: sortedByScore[sortedByScore.length - 1].score,
-      date: sortedByScore[sortedByScore.length - 1].submittedAt
+    const worstPerformance = sortedByPercentage.length > 0 ? {
+      id: sortedByPercentage[sortedByPercentage.length - 1].id,
+      quizId: sortedByPercentage[sortedByPercentage.length - 1].quizId,
+      quizTitle: sortedByPercentage[sortedByPercentage.length - 1].quiz?.title || 'Unknown Quiz',
+      score: sortedByPercentage[sortedByPercentage.length - 1].score || 0,
+      totalQuestions: sortedByPercentage[sortedByPercentage.length - 1].totalQuestions || 0,
+      percentage: Math.round(((sortedByPercentage[sortedByPercentage.length - 1].score || 0) / (sortedByPercentage[sortedByPercentage.length - 1].totalQuestions || 1)) * 100),
+      submittedAt: sortedByPercentage[sortedByPercentage.length - 1].submittedAt
     } : null;
 
-    // Calculate trend (comparing recent vs older attempts)
+    // Calculate trend (comparing recent vs older attempts based on percentage)
     const halfPoint = Math.floor(attemptsWithScores.length / 2);
     let trend: 'improving' | 'declining' | 'stable' | 'insufficient_data' = 'insufficient_data';
-    
+
     if (attemptsWithScores.length >= 4) {
-      const recentAvg = attemptsWithScores.slice(0, halfPoint)
-        .reduce((sum, a) => sum + (a.score || 0), 0) / halfPoint;
-      const olderAvg = attemptsWithScores.slice(halfPoint)
-        .reduce((sum, a) => sum + (a.score || 0), 0) / (attemptsWithScores.length - halfPoint);
-      
+      const recentPercentages = attemptsWithScores.slice(0, halfPoint)
+        .map(a => ((a.score || 0) / (a.totalQuestions || 1)) * 100);
+      const olderPercentages = attemptsWithScores.slice(halfPoint)
+        .map(a => ((a.score || 0) / (a.totalQuestions || 1)) * 100);
+
+      const recentAvg = recentPercentages.reduce((sum, p) => sum + p, 0) / recentPercentages.length;
+      const olderAvg = olderPercentages.reduce((sum, p) => sum + p, 0) / olderPercentages.length;
+
       const difference = recentAvg - olderAvg;
       if (difference > 5) trend = 'improving';
       else if (difference < -5) trend = 'declining';

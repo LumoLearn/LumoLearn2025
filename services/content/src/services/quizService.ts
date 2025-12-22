@@ -506,9 +506,9 @@ export const submitQuizAnswers = async (
 
   // Save quiz attempt to PostgreSQL
   const query = `
-    INSERT INTO quiz_attempts (quiz_id, student_id, score, answers, submitted_at)
-    VALUES ($1, $2, $3, $4, NOW())
-    RETURNING id, quiz_id as "quizId", student_id as "studentId", score, answers, submitted_at as "submittedAt"
+    INSERT INTO quiz_attempts (quiz_id, student_id, score, total_questions, answers, submitted_at)
+    VALUES ($1, $2, $3, $4, $5, NOW())
+    RETURNING id, quiz_id as "quizId", student_id as "studentId", score, total_questions as "totalQuestions", answers, submitted_at as "submittedAt"
   `;
 
   const result = await postgresDb.query<{
@@ -516,12 +516,14 @@ export const submitQuizAnswers = async (
     quizId: string;
     studentId: string;
     score: number;
+    totalQuestions: number;
     answers: Record<string, string>;
     submittedAt: Date;
   }>(query, [
     quizId,
     studentId,
     correctCount,
+    totalQuestions,
     JSON.stringify(answers),
   ]);
 
