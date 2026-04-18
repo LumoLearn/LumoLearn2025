@@ -1,12 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { toast } from 'sonner';
+import {
+  AlertCircle,
+  BookOpen,
+  Check,
+  Copy,
+  GraduationCap,
+  Mail,
+  Pencil,
+  Shield,
+  Users,
+  X,
+} from 'lucide-react';
+
 import { userService } from '@/lib/api/user';
-import { useAuthStore } from '@/store/auth.store';
 import type { UserProfile } from '@/lib/types/user';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,28 +27,59 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
 
-// Validation schema for profile update
 const profileSchema = z.object({
-  firstName: z.string().min(1, 'First name is required').max(50, 'First name is too long'),
-  lastName: z.string().min(1, 'Last name is required').max(50, 'Last name is too long'),
+  firstName: z
+    .string()
+    .min(1, 'Ime je obavezno')
+    .max(50, 'Ime je predugačko'),
+  lastName: z
+    .string()
+    .min(1, 'Prezime je obavezno')
+    .max(50, 'Prezime je predugačko'),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
+const ROLE_LABELS: Record<string, string> = {
+  student: 'Učenik',
+  teacher: 'Nastavnik',
+  parent: 'Roditelj',
+};
+
+function getRoleIcon(role: string | undefined) {
+  if (role === 'teacher') return GraduationCap;
+  if (role === 'student') return BookOpen;
+  if (role === 'parent') return Users;
+  return Shield;
+}
+
+function getInitials(
+  firstName?: string | null,
+  lastName?: string | null,
+  email?: string | null
+): string {
+  const f = firstName?.trim()?.[0];
+  const l = lastName?.trim()?.[0];
+  if (f && l) return `${f}${l}`.toUpperCase();
+  if (f) return f.toUpperCase();
+  if (email) return email.slice(0, 2).toUpperCase();
+  return '?';
+}
+
 export default function ProfilePage() {
-  const router = useRouter();
-  const { user } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const {
     register,
@@ -47,9 +90,9 @@ export default function ProfilePage() {
     resolver: zodResolver(profileSchema),
   });
 
-  // Fetch profile on mount
   useEffect(() => {
     fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProfile = async () => {
@@ -58,14 +101,12 @@ export default function ProfilePage() {
       setError(null);
       const data = await userService.getProfile();
       setProfile(data);
-
-      // Set form default values
       reset({
         firstName: data.profile.firstName || '',
         lastName: data.profile.lastName || '',
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to load profile');
+      setError(err.message || 'Nije uspelo učitavanje profila');
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +116,6 @@ export default function ProfilePage() {
     try {
       setIsSaving(true);
       setError(null);
-      setSuccessMessage(null);
 
       const response = await userService.updateProfile({
         firstName: data.firstName,
@@ -83,7 +123,6 @@ export default function ProfilePage() {
       });
 
       if (response.success) {
-        // Update local profile state
         setProfile((prev) =>
           prev
             ? {
@@ -92,22 +131,19 @@ export default function ProfilePage() {
               }
             : null
         );
-
-        setSuccessMessage('Profile updated successfully!');
+        toast.success('Profil je uspešno ažuriran');
         setIsEditing(false);
-
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccessMessage(null), 3000);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to update profile');
+      const msg = err.message || 'Nije uspelo ažuriranje profila';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
-    // Reset form to original values
     if (profile) {
       reset({
         firstName: profile.profile.firstName || '',
@@ -118,234 +154,265 @@ export default function ProfilePage() {
     setError(null);
   };
 
+  const handleCopyId = async () => {
+    if (!profile) return;
+    await navigator.clipboard.writeText(profile.id);
+    setCopied(true);
+    toast.success('Učenički ID kopiran');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Card className="w-full max-w-2xl">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-              <span className="ml-3 text-muted-foreground">Loading profile...</span>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="space-y-6">
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
 
   if (error && !profile) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-2xl">
-          <CardHeader>
-            <CardTitle className="text-2xl text-destructive">Error</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">{error}</p>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={fetchProfile}>Try Again</Button>
-          </CardFooter>
-        </Card>
-      </div>
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <AlertCircle className="size-5 text-destructive" />
+            <CardTitle className="text-destructive">Greška</CardTitle>
+          </div>
+          <CardDescription>{error}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={fetchProfile}>Pokušaj ponovo</Button>
+        </CardContent>
+      </Card>
     );
   }
 
+  if (!profile) return null;
+
+  const role = profile.role;
+  const RoleIcon = getRoleIcon(role);
+  const roleLabel = ROLE_LABELS[role] ?? role;
+
   return (
-    <div className="container mx-auto max-w-2xl py-8 px-4">
-      {/* Back to Dashboard Button */}
-      <Button
-        variant="ghost"
-        onClick={() => router.push(`/dashboard/${user?.role}`)}
-        className="mb-4"
-      >
-        ← Back to Dashboard
-      </Button>
+    <div className="space-y-6">
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
+            <Avatar className="size-20 rounded-xl">
+              <AvatarFallback className="rounded-xl bg-primary text-primary-foreground text-2xl font-semibold">
+                {getInitials(
+                  profile.profile.firstName,
+                  profile.profile.lastName,
+                  profile.email
+                )}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0 space-y-1">
+              <h2 className="text-2xl font-bold tracking-tight truncate">
+                {profile.profile.firstName || profile.profile.lastName
+                  ? `${profile.profile.firstName ?? ''} ${profile.profile.lastName ?? ''}`.trim()
+                  : 'Nepotpun profil'}
+              </h2>
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Mail className="size-4 shrink-0" />
+                <span className="truncate">{profile.email}</span>
+              </p>
+              <div className="inline-flex items-center gap-1.5 rounded-full border bg-muted/50 px-3 py-1 text-xs font-medium">
+                <RoleIcon className="size-3.5" />
+                <span>{roleLabel}</span>
+              </div>
+            </div>
+            {!isEditing && (
+              <Button
+                onClick={() => setIsEditing(true)}
+                aria-label="Izmeni profil"
+              >
+                <Pencil className="mr-2 size-4" />
+                Izmeni
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl font-bold">Profile</CardTitle>
+          <CardTitle>Lične informacije</CardTitle>
           <CardDescription>
-            View and manage your profile information
+            Ažurirajte vaše osnovne podatke.
           </CardDescription>
         </CardHeader>
-
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-6">
-            {/* Success Message */}
-            {successMessage && (
-              <div
-                className="rounded-md bg-green-50 p-4 text-sm text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                role="alert"
-                aria-live="polite"
-              >
-                {successMessage}
-              </div>
-            )}
-
-            {/* Error Message */}
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <CardContent className="space-y-5">
             {error && (
               <div
-                className="rounded-md bg-destructive/15 p-4 text-sm text-destructive"
+                className="flex items-start gap-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
                 role="alert"
                 aria-live="assertive"
               >
-                {error}
+                <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                <span>{error}</span>
               </div>
             )}
 
-            {/* Email (Read-only) */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={profile?.email || ''}
-                disabled
-                className="bg-muted cursor-not-allowed"
-                aria-readonly="true"
-              />
-              <p className="text-xs text-muted-foreground">
-                Email cannot be changed
-              </p>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" required={isEditing}>
+                  Ime
+                </Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  placeholder="Unesite ime"
+                  disabled={!isEditing}
+                  error={errors.firstName?.message}
+                  aria-required="true"
+                  {...register('firstName')}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName" required={isEditing}>
+                  Prezime
+                </Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  placeholder="Unesite prezime"
+                  disabled={!isEditing}
+                  error={errors.lastName?.message}
+                  aria-required="true"
+                  {...register('lastName')}
+                />
+              </div>
             </div>
 
-            {/* Role (Read-only) */}
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Input
-                id="role"
-                type="text"
-                value={profile?.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : ''}
-                disabled
-                className="bg-muted cursor-not-allowed"
-                aria-readonly="true"
-              />
-            </div>
+            <Separator />
 
-            {/* First Name */}
-            <div className="space-y-2">
-              <Label htmlFor="firstName" required>
-                First Name
-              </Label>
-              <Input
-                id="firstName"
-                type="text"
-                placeholder="Enter your first name"
-                disabled={!isEditing}
-                error={errors.firstName?.message}
-                aria-required="true"
-                className={!isEditing ? 'bg-muted cursor-not-allowed' : ''}
-                {...register('firstName')}
-              />
-            </div>
-
-            {/* Last Name */}
-            <div className="space-y-2">
-              <Label htmlFor="lastName" required>
-                Last Name
-              </Label>
-              <Input
-                id="lastName"
-                type="text"
-                placeholder="Enter your last name"
-                disabled={!isEditing}
-                error={errors.lastName?.message}
-                aria-required="true"
-                className={!isEditing ? 'bg-muted cursor-not-allowed' : ''}
-                {...register('lastName')}
-              />
-            </div>
-
-            {/* Role-specific information display */}
-            {profile?.student && (
-              <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
-                <h3 className="mb-2 font-semibold">Student Information</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="studentId">Student ID</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="studentId"
-                      type="text"
-                      value={profile.id}
-                      disabled
-                      className="bg-background font-mono text-sm"
-                      aria-readonly="true"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        navigator.clipboard.writeText(profile.id);
-                        setSuccessMessage('Student ID copied to clipboard!');
-                        setTimeout(() => setSuccessMessage(null), 2000);
-                      }}
-                    >
-                      Copy
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Share this ID with your parent to link your account.
-                  </p>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Accessibility settings are configured.
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={profile.email}
+                  disabled
+                  aria-readonly="true"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Email se ne može promeniti.
                 </p>
               </div>
-            )}
-
-            {profile?.teacher && (
-              <div className="rounded-lg border bg-muted/50 p-4">
-                <h3 className="mb-2 font-semibold">Teacher Information</h3>
-                <p className="text-sm text-muted-foreground">
-                  You have access to lesson and quiz management features.
+              <div className="space-y-2">
+                <Label htmlFor="role">Uloga</Label>
+                <Input
+                  id="role"
+                  type="text"
+                  value={roleLabel}
+                  disabled
+                  aria-readonly="true"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Uloga se ne može promeniti.
                 </p>
               </div>
-            )}
+            </div>
 
-            {profile?.parent && (
-              <div className="rounded-lg border bg-muted/50 p-4">
-                <h3 className="mb-2 font-semibold">Parent Information</h3>
-                <p className="text-sm text-muted-foreground">
-                  Linked children: {profile.parent.childrenCount}
-                </p>
-              </div>
-            )}
-          </CardContent>
-
-          <CardFooter className="flex justify-end space-x-3">
-            {!isEditing ? (
-              <Button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                aria-label="Edit profile"
-              >
-                Edit Profile
-              </Button>
-            ) : (
-              <>
+            {isEditing && (
+              <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleCancel}
                   disabled={isSaving}
-                  aria-label="Cancel editing"
                 >
-                  Cancel
+                  <X className="mr-2 size-4" />
+                  Otkaži
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSaving || !isDirty}
                   aria-busy={isSaving}
-                  aria-label="Save profile changes"
                 >
-                  {isSaving ? 'Saving...' : 'Save Changes'}
+                  <Check className="mr-2 size-4" />
+                  {isSaving ? 'Čuvanje...' : 'Sačuvaj izmene'}
                 </Button>
-              </>
+              </div>
             )}
-          </CardFooter>
+          </CardContent>
         </form>
       </Card>
+
+      {profile.student && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <BookOpen className="size-5 text-primary" />
+              <CardTitle>Informacije o učeniku</CardTitle>
+            </div>
+            <CardDescription>
+              Podelite ID sa roditeljem da biste povezali naloge.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Label htmlFor="studentId">Učenički ID</Label>
+            <div className="flex gap-2">
+              <Input
+                id="studentId"
+                type="text"
+                value={profile.id}
+                disabled
+                className="font-mono text-xs"
+                aria-readonly="true"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handleCopyId}
+                aria-label="Kopiraj učenički ID"
+              >
+                {copied ? (
+                  <Check className="size-4 text-primary" />
+                ) : (
+                  <Copy className="size-4" />
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {profile.teacher && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <GraduationCap className="size-5 text-primary" />
+              <CardTitle>Informacije o nastavniku</CardTitle>
+            </div>
+            <CardDescription>
+              Imate pristup alatima za upravljanje lekcijama i kvizovima.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
+
+      {profile.parent && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Users className="size-5 text-primary" />
+              <CardTitle>Informacije o roditelju</CardTitle>
+            </div>
+            <CardDescription>
+              Povezana deca:{' '}
+              <span className="font-semibold text-foreground">
+                {profile.parent.childrenCount}
+              </span>
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
     </div>
   );
 }

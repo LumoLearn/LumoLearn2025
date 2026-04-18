@@ -1,9 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AlertCircle, ArrowLeft, Heart, Sparkles } from 'lucide-react';
+
 import { loginSchema, type LoginFormData } from '@/lib/schemas/auth';
 import { authService } from '@/lib/services/auth.service';
 import { useAuthStore } from '@/store/auth.store';
@@ -18,6 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,14 +45,12 @@ export default function LoginPage() {
 
       if (response.success && response.token && response.user) {
         setAuth(response.user, response.token);
-
-        // Redirect based on role
         router.push(`/dashboard/${response.user.role}`);
       } else {
-        setApiError(response.error || 'Login failed');
+        setApiError(response.error || 'Prijava nije uspela');
       }
     } catch (error: any) {
-      setApiError(error.message || 'An error occurred during login');
+      setApiError(error.message || 'Došlo je do greške prilikom prijave');
       setError(error.message);
     } finally {
       setLoading(false);
@@ -56,79 +58,142 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-3xl font-bold text-center">
-            Welcome to LumoLearn
-          </CardTitle>
-          <CardDescription className="text-center">
-            Enter your credentials to access your account
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            {apiError && (
-              <div
-                className="rounded-md bg-destructive/15 p-3 text-sm text-destructive"
-                role="alert"
-                aria-live="assertive"
-              >
-                {apiError}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="email" required>
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your.email@example.com"
-                error={errors.email?.message}
-                aria-required="true"
-                {...register('email')}
-              />
+    <div className="grid min-h-screen lg:grid-cols-2">
+      <aside className="relative hidden overflow-hidden bg-primary lg:flex lg:flex-col">
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/70"
+        />
+        <div
+          aria-hidden
+          className="absolute -bottom-32 -left-32 size-96 rounded-full bg-white/10 blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="absolute -top-32 -right-32 size-96 rounded-full bg-white/10 blur-3xl"
+        />
+        <div className="relative flex h-full flex-col justify-between p-10 text-primary-foreground">
+          <Link href="/" className="flex items-center gap-2 w-fit">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-white/15 backdrop-blur">
+              <Sparkles className="size-5" />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password" required>
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                error={errors.password?.message}
-                aria-required="true"
-                {...register('password')}
-              />
+            <span className="text-lg font-semibold">LumoLearn</span>
+          </Link>
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-sm backdrop-blur">
+              <Heart className="size-4" />
+              <span>Dobrodošli nazad</span>
             </div>
-          </CardContent>
+            <h2 className="text-4xl font-bold leading-tight">
+              Nastavi svoje putovanje kroz učenje.
+            </h2>
+            <p className="text-lg leading-8 text-primary-foreground/90">
+              Prijavi se i nastavi sa lekcijama, kvizovima i personalizovanim
+              iskustvom koje smo pripremili za tebe.
+            </p>
+          </div>
+          <p className="text-sm text-primary-foreground/70">
+            © {new Date().getFullYear()} LumoLearn
+          </p>
+        </div>
+      </aside>
 
-          <CardFooter className="flex flex-col space-y-4">
+      <div className="relative flex flex-col">
+        <div className="absolute right-4 top-4 flex items-center gap-2 md:right-6 md:top-6">
+          <ThemeToggle />
+        </div>
+
+        <div className="flex flex-1 items-center justify-center p-6 md:p-10">
+          <div className="w-full max-w-md">
             <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-              aria-busy={isLoading}
+              variant="ghost"
+              size="sm"
+              asChild
+              className="mb-4 -ml-3 text-muted-foreground"
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              <Link href="/">
+                <ArrowLeft className="mr-2 size-4" />
+                Nazad na početnu
+              </Link>
             </Button>
 
-            <p className="text-center text-sm text-muted-foreground">
-              Don&apos;t have an account?{' '}
-              <a
-                href="/register"
-                className="font-medium text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
-              >
-                Register here
-              </a>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
+            <Card className="border-none shadow-none lg:border lg:shadow-sm">
+              <CardHeader className="space-y-2 px-0 lg:px-6">
+                <CardTitle className="text-3xl font-bold">Prijava</CardTitle>
+                <CardDescription>
+                  Unesite vaše podatke da biste pristupili nalogu.
+                </CardDescription>
+              </CardHeader>
+              <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                <CardContent className="space-y-4 px-0 lg:px-6">
+                  {apiError && (
+                    <div
+                      className="flex items-start gap-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+                      role="alert"
+                      aria-live="assertive"
+                    >
+                      <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                      <span>{apiError}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email" required>
+                      Email
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="ime.prezime@primer.com"
+                      autoComplete="email"
+                      error={errors.email?.message}
+                      aria-required="true"
+                      {...register('email')}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password" required>
+                      Lozinka
+                    </Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Unesite lozinku"
+                      autoComplete="current-password"
+                      error={errors.password?.message}
+                      aria-required="true"
+                      {...register('password')}
+                    />
+                  </div>
+                </CardContent>
+
+                <CardFooter className="flex flex-col space-y-4 px-0 lg:px-6">
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="w-full"
+                    disabled={isLoading}
+                    aria-busy={isLoading}
+                  >
+                    {isLoading ? 'Prijavljivanje...' : 'Prijavi se'}
+                  </Button>
+
+                  <p className="text-center text-sm text-muted-foreground">
+                    Nemate nalog?{' '}
+                    <Link
+                      href="/register"
+                      className="font-medium text-primary underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded"
+                    >
+                      Registrujte se
+                    </Link>
+                  </p>
+                </CardFooter>
+              </form>
+            </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
