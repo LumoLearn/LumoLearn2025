@@ -1,13 +1,30 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAuthStore } from '@/store/auth.store';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Plus, Loader2 } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  Brain,
+  CheckCircle2,
+  FileText,
+  Plus,
+  Upload,
+  Users,
+} from 'lucide-react';
+
+import { useAuthStore } from '@/store/auth.store';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { lessonsApi } from '@/lib/api/lessons';
 import { quizzesApi } from '@/lib/api/quizzes';
+import { StatCard } from '@/components/dashboard/stat-card';
 
 interface DashboardStats {
   totalLessons: number;
@@ -15,6 +32,13 @@ interface DashboardStats {
   unpublishedLessons: number;
   totalQuizzes: number;
   totalStudents: number;
+}
+
+function getFirstName(user: { email?: string; firstName?: string | null } | null): string {
+  if (!user) return 'nastavniče';
+  if (user.firstName) return user.firstName;
+  if (user.email) return user.email.split('@')[0];
+  return 'nastavniče';
 }
 
 export default function TeacherDashboard() {
@@ -33,18 +57,14 @@ export default function TeacherDashboard() {
       try {
         setIsLoading(true);
 
-        // Fetch all lessons
         const allLessonsResponse = await lessonsApi.getLessons();
         const totalLessons = allLessonsResponse.lessons?.length || 0;
 
-        // Fetch published lessons
         const publishedResponse = await lessonsApi.getLessons({ isPublished: true });
         const publishedLessons = publishedResponse.lessons?.length || 0;
 
-        // Calculate unpublished
         const unpublishedLessons = totalLessons - publishedLessons;
 
-        // Fetch quizzes
         let totalQuizzes = 0;
         try {
           const quizzesResponse = await quizzesApi.getQuizzes();
@@ -58,7 +78,7 @@ export default function TeacherDashboard() {
           publishedLessons,
           unpublishedLessons,
           totalQuizzes,
-          totalStudents: 0, // TODO: Implement when student API is ready
+          totalStudents: 0,
         });
       } catch (error) {
         console.error('Failed to fetch dashboard stats:', error);
@@ -70,108 +90,140 @@ export default function TeacherDashboard() {
     fetchStats();
   }, []);
 
+  const firstName = getFirstName(user as any);
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">
-            Welcome back, Teacher!
+            Zdravo, {firstName}!
           </h2>
-          <p className="text-muted-foreground">
-            Manage your lessons and track student progress.
+          <p className="mt-1 text-muted-foreground">
+            Upravljaj lekcijama i prati napredak učenika.
           </p>
         </div>
-        <Link href="/dashboard/teacher/lessons/upload">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Create New Lesson
-          </Button>
-        </Link>
+        <Button asChild>
+          <Link href="/dashboard/teacher/lessons/upload">
+            <Plus className="mr-2 size-4" />
+            Nova lekcija
+          </Link>
+        </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Lessons</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-            ) : (
-              <>
-                <p className="text-2xl font-bold">{stats.totalLessons}</p>
-                <p className="text-xs text-muted-foreground">Lessons created</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Published</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-            ) : (
-              <>
-                <p className="text-2xl font-bold">{stats.publishedLessons}</p>
-                <p className="text-xs text-muted-foreground">Active lessons</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Quizzes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.totalQuizzes}</p>
-            <p className="text-xs text-muted-foreground">Total quizzes</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Students</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.totalStudents}</p>
-            <p className="text-xs text-muted-foreground">
-              Enrolled students
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Ukupno lekcija"
+          value={stats.totalLessons}
+          description="Sve kreirane lekcije"
+          icon={FileText}
+          accent="primary"
+          isLoading={isLoading}
+        />
+        <StatCard
+          label="Objavljene"
+          value={stats.publishedLessons}
+          description="Aktivne lekcije"
+          icon={CheckCircle2}
+          accent="success"
+          isLoading={isLoading}
+        />
+        <StatCard
+          label="Kvizovi"
+          value={stats.totalQuizzes}
+          description="Ukupan broj kvizova"
+          icon={Brain}
+          accent="info"
+          isLoading={isLoading}
+        />
+        <StatCard
+          label="Učenici"
+          value={stats.totalStudents}
+          description="Prijavljeni učenici"
+          icon={Users}
+          accent="warning"
+          isLoading={isLoading}
+        />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+          <CardTitle>Brze akcije</CardTitle>
+          <CardDescription>
+            Najčešće korišćene radnje za efikasan rad.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Link href="/dashboard/teacher/lessons" className="block">
-            <Button variant="outline" className="w-full justify-start">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-2"
-              >
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-              </svg>
-              View All Lessons
-            </Button>
-          </Link>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <QuickAction
+              href="/dashboard/teacher/lessons/upload"
+              icon={Upload}
+              title="Upload lekcije"
+              description="Dodaj novu lekciju uz AI podršku"
+            />
+            <QuickAction
+              href="/dashboard/teacher/lessons"
+              icon={BookOpen}
+              title="Sve lekcije"
+              description="Pregled i uređivanje postojećih"
+            />
+          </div>
         </CardContent>
       </Card>
+
+      {stats.unpublishedLessons > 0 && !isLoading && (
+        <Card className="border-[color:var(--warning)]/30 bg-[color:var(--warning)]/5">
+          <CardContent className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--warning)]/15 text-[color:var(--warning)]">
+                <FileText className="size-5" />
+              </div>
+              <div>
+                <p className="font-medium">
+                  {stats.unpublishedLessons}{' '}
+                  {stats.unpublishedLessons === 1
+                    ? 'neobjavljena lekcija'
+                    : 'neobjavljenih lekcija'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Pregledaj i objavi ih da bi bile dostupne učenicima.
+                </p>
+              </div>
+            </div>
+            <Button asChild variant="outline" className="shrink-0">
+              <Link href="/dashboard/teacher/lessons">
+                Otvori
+                <ArrowRight className="ml-2 size-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
+  );
+}
+
+interface QuickActionProps {
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+}
+
+function QuickAction({ href, icon: Icon, title, description }: QuickActionProps) {
+  return (
+    <Link
+      href={href}
+      className="group flex items-start gap-3 rounded-lg border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-accent/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    >
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <Icon className="size-5" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium">{title}</p>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+      <ArrowRight className="mt-1 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+    </Link>
   );
 }
