@@ -1,7 +1,7 @@
 'use client';
 
 import { ProtectedRoute } from '@/components/auth/protected-route';
-import { DashboardLayout } from '@/components/layouts/dashboard-layout';
+import { SidebarLayout } from '@/components/layouts/sidebar-layout';
 import { USER_ROLES } from '@/lib/constants/roles';
 
 export default function StudentLayout({
@@ -11,7 +11,7 @@ export default function StudentLayout({
 }) {
   return (
     <ProtectedRoute allowedRoles={[USER_ROLES.STUDENT]}>
-      <DashboardLayout title="Student Dashboard">{children}</DashboardLayout>
+      <SidebarLayout title="Učenik">{children}</SidebarLayout>
     </ProtectedRoute>
   );
 }
