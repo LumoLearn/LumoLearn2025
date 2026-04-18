@@ -1,7 +1,15 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
+
+@layer utilities {
+  /* Override Typography plugin default max-width: 65ch koji seče tekst na širokim ekranima. */
+  .prose.prose-full-width {
+    max-width: 100% !important;
+  }
+}
 
 @font-face {
   font-family: "OpenDyslexic";

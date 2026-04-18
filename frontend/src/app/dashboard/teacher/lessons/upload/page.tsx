@@ -1,98 +1,91 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
+import { ArrowLeft, FileText, Info } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@/components/dashboard/page-header';
 import { LessonUploadForm } from '@/components/features/lessons/LessonUploadForm';
 
-/**
- * Metadata for the lesson upload page
- */
 export const metadata: Metadata = {
-  title: 'Upload Lesson | LumoLearn',
-  description: 'Upload new lessons for students',
+  title: 'Nova lekcija | LumoLearn',
+  description: 'Otpremi novu lekciju za učenike',
 };
 
-/**
- * Lesson Upload Page (Teacher)
- *
- * This page allows teachers to upload lesson files (Word/PDF)
- * which will be converted to HTML and made available to students.
- *
- * Features:
- * - Drag-and-drop file upload
- * - File type validation (.docx, .pdf)
- * - File size validation (max 10MB)
- * - Title input with validation
- * - Upload progress indication
- * - Error handling and user feedback
- * - Redirect to lessons list on success
- *
- * Route: /dashboard/teacher/lessons/upload
- * Protected: Teacher role required
- */
 export default function LessonUploadPage() {
   return (
-    <div className="container mx-auto py-8 px-4">
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">New Lesson</h1>
-        <p className="text-muted-foreground mt-2">
-          Create a new lesson by uploading a Word or PDF document
-        </p>
-      </div>
+    <div className="space-y-6">
+      <Button variant="ghost" size="sm" asChild className="-ml-3 w-fit">
+        <Link href="/dashboard/teacher/lessons">
+          <ArrowLeft className="mr-2 size-4" />
+          Nazad na lekcije
+        </Link>
+      </Button>
 
-      {/* Upload Form */}
-      <LessonUploadForm />
+      <PageHeader
+        title="Nova lekcija"
+        description="Kreiraj novu lekciju otpremanjem Word ili PDF dokumenta."
+      />
 
-      {/* Instructions Section */}
-      <div className="max-w-2xl mx-auto mt-8 space-y-6">
-        <div className="rounded-lg border bg-card p-6">
-          <h2 className="text-lg font-semibold mb-4">Upload Instructions</h2>
+      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+        <LessonUploadForm />
 
-          <div className="space-y-4 text-sm text-muted-foreground">
-            <div>
-              <h3 className="font-medium text-foreground mb-2">Supported Formats:</h3>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Microsoft Word documents (.docx)</li>
-                <li>PDF documents (.pdf)</li>
-              </ul>
+        <Card className="h-fit lg:sticky lg:top-6">
+          <CardHeader className="flex flex-row items-center gap-3 space-y-0">
+            <div className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <Info className="size-4" />
             </div>
-
-            <div>
-              <h3 className="font-medium text-foreground mb-2">Limitations:</h3>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Maximum file size: 10MB</li>
-                <li>Lesson title: 3-255 characters</li>
+            <CardTitle className="text-base">Uputstvo za otpremanje</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5 text-sm">
+            <section className="space-y-2">
+              <h3 className="inline-flex items-center gap-2 font-medium">
+                <FileText className="size-4 text-muted-foreground" />
+                Podržani formati
+              </h3>
+              <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+                <li>Microsoft Word dokumenti (.docx)</li>
+                <li>PDF dokumenti (.pdf)</li>
               </ul>
-            </div>
+            </section>
 
-            <div>
-              <h3 className="font-medium text-foreground mb-2">Important Notes:</h3>
-              <ul className="list-disc list-inside space-y-1">
+            <section className="space-y-2">
+              <h3 className="font-medium">Ograničenja</h3>
+              <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+                <li>Maksimalna veličina fajla: 10 MB</li>
+                <li>Naslov lekcije: 3–255 karaktera</li>
+              </ul>
+            </section>
+
+            <section className="space-y-2">
+              <h3 className="font-medium">Važne napomene</h3>
+              <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+                <li>Fajlovi se automatski konvertuju u HTML za prikaz učenicima.</li>
                 <li>
-                  Files are automatically converted to HTML format for student viewing
+                  Nove lekcije su po default-u <strong>neobjavljene</strong> i
+                  učenici ih ne vide.
                 </li>
                 <li>
-                  Uploaded lessons are initially <strong>unpublished</strong> and
-                  invisible to students
+                  Nakon otpremanja ih možeš objaviti sa spiska lekcija.
                 </li>
                 <li>
-                  You can publish them after upload from the lessons list
-                </li>
-                <li>
-                  Formatting from the original document will be preserved as much as possible
+                  Formatiranje iz originalnog dokumenta biće zadržano koliko je
+                  to moguće.
                 </li>
               </ul>
-            </div>
+            </section>
 
-            <div>
-              <h3 className="font-medium text-foreground mb-2">Best Practices for Optimal Results:</h3>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Use clear headings and subheadings</li>
-                <li>Avoid complex formatting and tables</li>
-                <li>Use standard fonts</li>
-                <li>Review content after upload before publishing</li>
+            <section className="space-y-2">
+              <h3 className="font-medium">Najbolji rezultati</h3>
+              <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+                <li>Koristi jasne naslove i podnaslove.</li>
+                <li>Izbegavaj kompleksno formatiranje i tabele.</li>
+                <li>Koristi standardne fontove.</li>
+                <li>Pregledaj sadržaj pre objavljivanja.</li>
               </ul>
-            </div>
-          </div>
-        </div>
+            </section>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
