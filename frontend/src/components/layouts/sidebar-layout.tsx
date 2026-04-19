@@ -58,6 +58,7 @@ function getNavItems(role: UserRole | undefined): NavItem[] {
     return [
       { href: '/dashboard/teacher', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/dashboard/teacher/lessons', label: 'Lekcije', icon: BookOpen },
+      { href: '/dashboard/teacher/quizzes', label: 'Kvizovi', icon: Brain },
     ];
   }
   if (role === 'student') {

@@ -9,8 +9,8 @@ import {
   CheckCircle2,
   FileText,
   Plus,
+  Sparkles,
   Upload,
-  Users,
 } from 'lucide-react';
 
 import { useAuthStore } from '@/store/auth.store';
@@ -31,7 +31,7 @@ interface DashboardStats {
   publishedLessons: number;
   unpublishedLessons: number;
   totalQuizzes: number;
-  totalStudents: number;
+  publishedQuizzes: number;
 }
 
 function getFirstName(user: { email?: string; firstName?: string | null } | null): string {
@@ -48,7 +48,7 @@ export default function TeacherDashboard() {
     publishedLessons: 0,
     unpublishedLessons: 0,
     totalQuizzes: 0,
-    totalStudents: 0,
+    publishedQuizzes: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -57,28 +57,26 @@ export default function TeacherDashboard() {
       try {
         setIsLoading(true);
 
-        const allLessonsResponse = await lessonsApi.getLessons();
-        const totalLessons = allLessonsResponse.lessons?.length || 0;
+        const [lessonsResponse, quizzesResponse] = await Promise.all([
+          lessonsApi.getLessons(),
+          quizzesApi.getQuizzes().catch((error) => {
+            console.error('Failed to fetch quizzes:', error);
+            return { quizzes: [] };
+          }),
+        ]);
 
-        const publishedResponse = await lessonsApi.getLessons({ isPublished: true });
-        const publishedLessons = publishedResponse.lessons?.length || 0;
+        const lessons = lessonsResponse.lessons || [];
+        const quizzes = quizzesResponse.quizzes || [];
 
-        const unpublishedLessons = totalLessons - publishedLessons;
-
-        let totalQuizzes = 0;
-        try {
-          const quizzesResponse = await quizzesApi.getQuizzes();
-          totalQuizzes = quizzesResponse.quizzes?.length || 0;
-        } catch (error) {
-          console.error('Failed to fetch quizzes:', error);
-        }
+        const publishedLessons = lessons.filter((l) => l.isPublished).length;
+        const publishedQuizzes = quizzes.filter((q) => q.status === 'published').length;
 
         setStats({
-          totalLessons,
+          totalLessons: lessons.length,
           publishedLessons,
-          unpublishedLessons,
-          totalQuizzes,
-          totalStudents: 0,
+          unpublishedLessons: lessons.length - publishedLessons,
+          totalQuizzes: quizzes.length,
+          publishedQuizzes,
         });
       } catch (error) {
         console.error('Failed to fetch dashboard stats:', error);
@@ -119,6 +117,7 @@ export default function TeacherDashboard() {
           icon={FileText}
           accent="primary"
           isLoading={isLoading}
+          href="/dashboard/teacher/lessons"
         />
         <StatCard
           label="Objavljene"
@@ -127,6 +126,7 @@ export default function TeacherDashboard() {
           icon={CheckCircle2}
           accent="success"
           isLoading={isLoading}
+          href="/dashboard/teacher/lessons"
         />
         <StatCard
           label="Kvizovi"
@@ -135,14 +135,16 @@ export default function TeacherDashboard() {
           icon={Brain}
           accent="info"
           isLoading={isLoading}
+          href="/dashboard/teacher/quizzes"
         />
         <StatCard
-          label="Učenici"
-          value={stats.totalStudents}
-          description="Prijavljeni učenici"
-          icon={Users}
+          label="Objavljeni kvizovi"
+          value={stats.publishedQuizzes}
+          description="Dostupni učenicima"
+          icon={Sparkles}
           accent="warning"
           isLoading={isLoading}
+          href="/dashboard/teacher/quizzes"
         />
       </div>
 

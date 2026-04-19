@@ -1,252 +1,278 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle, XCircle, Trophy, BarChart3, Clock, Brain } from 'lucide-react';
+import Link from 'next/link';
+import {
+  ArrowLeft,
+  ArrowRight,
+  BarChart3,
+  BookOpen,
+  Brain,
+  CheckCircle2,
+  Loader2,
+  Trophy,
+  XCircle,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/dashboard/page-header';
+import { EmptyState } from '@/components/dashboard/empty-state';
+import { cn } from '@/lib/utils';
 
-import type { QuizSubmissionResponse, QuizQuestionResult } from '@/lib/types/quiz';
+import type { QuizSubmissionResponse } from '@/lib/types/quiz';
 
-/**
- * Quiz Results Page Component (FE-012)
- *
- * Displays quiz results after submission:
- * - Overall score and percentage
- * - Detailed question-by-question results
- * - Correct/incorrect answers highlighted
- * - Visual feedback with icons and colors
- * - Navigation back to quizzes list or retake option
- *
- * Features:
- * - Dynamic results rendering
- * - Score visualization
- * - Detailed answer breakdown
- * - Responsive design
- * - Accessibility friendly
- */
+function getScoreTone(percentage: number): {
+  text: string;
+  bg: string;
+  badge: 'success' | 'warning' | 'destructive';
+  label: string;
+  message: string;
+} {
+  if (percentage >= 80) {
+    return {
+      text: 'text-[color:var(--success)]',
+      bg: 'bg-[color:var(--success)]/10',
+      badge: 'success',
+      label: 'Odlično',
+      message: 'Odličan rad! Savladao si gradivo.',
+    };
+  }
+  if (percentage >= 60) {
+    return {
+      text: 'text-[color:var(--warning)]',
+      bg: 'bg-[color:var(--warning)]/10',
+      badge: 'warning',
+      label: 'Dobro',
+      message: 'Dobar trud! Pregledaj pitanja koja si promašio da napreduješ.',
+    };
+  }
+  return {
+    text: 'text-destructive',
+    bg: 'bg-destructive/10',
+    badge: 'destructive',
+    label: 'Nastavi da vežbaš',
+    message: 'Ne odustaj! Pregledaj gradivo i pokušaj ponovo.',
+  };
+}
+
 function QuizResultsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [results, setResults] = useState<QuizSubmissionResponse | null>(null);
+  const [parseError, setParseError] = useState(false);
 
   useEffect(() => {
-    // Get results from URL query params (passed from take page)
     const data = searchParams.get('data');
-    console.log('[Quiz Results] Raw data from URL:', data);
-
-    if (data) {
-      try {
-        const parsedResults = JSON.parse(decodeURIComponent(data));
-        console.log('[Quiz Results] Parsed results:', parsedResults);
-        console.log('[Quiz Results] Has results array:', !!parsedResults.results);
-        console.log('[Quiz Results] Results array:', parsedResults.results);
-        setResults(parsedResults);
-      } catch (err) {
-        console.error('[Quiz Results] Error parsing results:', err);
-      }
+    if (!data) {
+      setParseError(true);
+      return;
+    }
+    try {
+      const parsed = JSON.parse(decodeURIComponent(data));
+      setResults(parsed);
+    } catch {
+      setParseError(true);
     }
   }, [searchParams]);
 
-  /**
-   * Navigate back to quizzes list
-   */
-  const handleBackToQuizzes = () => {
-    router.push('/dashboard/student/quizzes');
-  };
+  if (parseError) {
+    return (
+      <div className="space-y-6">
+        <Button variant="ghost" size="sm" asChild className="-ml-3 w-fit">
+          <Link href="/dashboard/student/quizzes">
+            <ArrowLeft className="mr-2 size-4" />
+            Nazad na kvizove
+          </Link>
+        </Button>
+        <EmptyState
+          variant="error"
+          icon={BarChart3}
+          title="Rezultati nisu dostupni"
+          description="Nije moguće učitati rezultate kviza. Pokušaj ponovo da uradiš kviz."
+          action={
+            <Button variant="outline" asChild>
+              <Link href="/dashboard/student/quizzes">
+                <ArrowLeft className="mr-2 size-4" />
+                Nazad na kvizove
+              </Link>
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
 
-  /**
-   * Get score color based on percentage
-   */
-  const getScoreColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600';
-    if (percentage >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  /**
-   * Get score badge variant
-   */
-  const getScoreBadgeVariant = (percentage: number) => {
-    if (percentage >= 80) return 'default';
-    if (percentage >= 60) return 'secondary';
-    return 'destructive';
-  };
-
-  /**
-   * If no results, show error state
-   */
   if (!results) {
     return (
-      <div className="container mx-auto max-w-4xl py-8 px-4">
-        <Card>
-          <CardContent className="py-12">
-            <div className="flex flex-col items-center justify-center gap-4 text-center">
-              <div className="rounded-full bg-muted p-3">
-                <BarChart3 className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">No Results Available</h3>
-                <p className="text-sm text-muted-foreground">
-                  Unable to load quiz results. Please try taking the quiz again.
-                </p>
-              </div>
-              <Button variant="outline" onClick={handleBackToQuizzes} className="mt-4">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Quizzes
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const { score, totalQuestions, percentage, results: questionResults } = results;
-
-  // Additional validation for questionResults
-  if (!questionResults || !Array.isArray(questionResults) || questionResults.length === 0) {
-    return (
-      <div className="container mx-auto max-w-4xl py-8 px-4">
-        <Card>
-          <CardContent className="py-12">
-            <div className="flex flex-col items-center justify-center gap-4 text-center">
-              <div className="rounded-full bg-muted p-3">
-                <BarChart3 className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Incomplete Results</h3>
-                <p className="text-sm text-muted-foreground">
-                  Results data is incomplete. Please try taking the quiz again.
-                </p>
-              </div>
-              <Button variant="outline" onClick={handleBackToQuizzes} className="mt-4">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Quizzes
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="container mx-auto max-w-4xl py-8 px-4">
-      {/* Header */}
-      <div className="mb-6">
-        <Button variant="outline" onClick={handleBackToQuizzes} className="mb-4">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Quizzes
-        </Button>
-
-        <div className="flex items-center gap-3">
-          <div className="rounded-full bg-primary/10 p-3">
-            <Trophy className="h-6 w-6 text-primary" />
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">Quiz Results</h1>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="mx-auto size-8 animate-spin text-primary" />
+          <p className="mt-4 text-sm text-muted-foreground">
+            Učitavanje rezultata...
+          </p>
         </div>
       </div>
+    );
+  }
 
-      {/* Score Summary Card */}
-      <Card className="mb-8 border-2">
-        <CardHeader>
-          <CardTitle>Your Score</CardTitle>
-          <CardDescription>Great job completing the quiz!</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-3">
-            {/* Score */}
-            <div className="flex flex-col items-center justify-center p-6 bg-muted rounded-lg">
-              <div className={`text-5xl font-bold ${getScoreColor(percentage)}`}>
+  const {
+    score,
+    totalQuestions,
+    percentage,
+    results: questionResults,
+  } = results;
+
+  if (!questionResults || !Array.isArray(questionResults) || questionResults.length === 0) {
+    return (
+      <div className="space-y-6">
+        <Button variant="ghost" size="sm" asChild className="-ml-3 w-fit">
+          <Link href="/dashboard/student/quizzes">
+            <ArrowLeft className="mr-2 size-4" />
+            Nazad na kvizove
+          </Link>
+        </Button>
+        <EmptyState
+          variant="error"
+          icon={BarChart3}
+          title="Nepotpuni rezultati"
+          description="Podaci o rezultatima su nepotpuni. Pokušaj ponovo da uradiš kviz."
+          action={
+            <Button variant="outline" asChild>
+              <Link href="/dashboard/student/quizzes">
+                <ArrowLeft className="mr-2 size-4" />
+                Nazad na kvizove
+              </Link>
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
+
+  const tone = getScoreTone(percentage);
+
+  return (
+    <div className="space-y-6">
+      <Button variant="ghost" size="sm" asChild className="-ml-3 w-fit">
+        <Link href="/dashboard/student/quizzes">
+          <ArrowLeft className="mr-2 size-4" />
+          Nazad na kvizove
+        </Link>
+      </Button>
+
+      <PageHeader
+        title="Rezultati kviza"
+        description="Pregled tvog uspeha i detaljan prikaz odgovora."
+        action={
+          <div className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Trophy className="size-5" />
+          </div>
+        }
+      />
+
+      <Card>
+        <CardContent className="p-6">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div
+              className={cn(
+                'flex flex-col items-center justify-center rounded-lg p-4 text-center sm:p-6',
+                tone.bg
+              )}
+            >
+              <div className={cn('text-4xl font-bold sm:text-5xl', tone.text)}>
                 {score}/{totalQuestions}
               </div>
-              <p className="text-sm text-muted-foreground mt-2">Questions Correct</p>
+              <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
+                Tačnih odgovora
+              </p>
             </div>
 
-            {/* Percentage */}
-            <div className="flex flex-col items-center justify-center p-6 bg-muted rounded-lg">
-              <div className={`text-5xl font-bold ${getScoreColor(percentage)}`}>
+            <div
+              className={cn(
+                'flex flex-col items-center justify-center rounded-lg p-4 text-center sm:p-6',
+                tone.bg
+              )}
+            >
+              <div className={cn('text-4xl font-bold sm:text-5xl', tone.text)}>
                 {percentage.toFixed(0)}%
               </div>
-              <p className="text-sm text-muted-foreground mt-2">Success Rate</p>
+              <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
+                Uspešnost
+              </p>
             </div>
 
-            {/* Grade Badge */}
-            <div className="flex flex-col items-center justify-center p-6 bg-muted rounded-lg">
-              <Badge variant={getScoreBadgeVariant(percentage)} className="text-lg px-4 py-2">
-                {percentage >= 80 ? 'Excellent' : percentage >= 60 ? 'Good' : 'Keep Trying'}
+            <div
+              className={cn(
+                'flex flex-col items-center justify-center rounded-lg p-4 text-center sm:p-6',
+                tone.bg
+              )}
+            >
+              <Badge variant={tone.badge} className="px-3 py-1 text-sm">
+                {tone.label}
               </Badge>
-              <p className="text-sm text-muted-foreground mt-2">Performance</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Performance Message */}
-      <Card className="mb-6 border-dashed bg-muted/50">
-        <CardContent className="py-4">
-          <div className="flex items-start gap-3 text-sm">
-            <Brain className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <p className="font-medium">
-                {percentage >= 80
-                  ? 'Outstanding work! You have a strong understanding of the material.'
-                  : percentage >= 60
-                  ? 'Good effort! Review the questions you missed to improve further.'
-                  : 'Keep practicing! Review the material and try again when ready.'}
+              <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
+                Ocena
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Detailed Results Header */}
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold">Question Breakdown</h2>
-        <p className="text-muted-foreground">
-          Review your answers and see the correct solutions
+      <Card className="border-dashed bg-muted/30">
+        <CardContent className="flex items-start gap-3 p-4 text-sm">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <Brain className="size-4" />
+          </div>
+          <p className="flex-1 font-medium">{tone.message}</p>
+        </CardContent>
+      </Card>
+
+      <div>
+        <h2 className="text-xl font-bold sm:text-2xl">Pregled odgovora</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Pogledaj svoje odgovore i tačna rešenja.
         </p>
       </div>
 
-      {/* Question Results */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {questionResults.map((result, index) => {
           const isCorrect = result.isCorrect;
 
           return (
             <Card
               key={index}
-              className={`border-2 ${
-                isCorrect ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'
-              }`}
+              className={cn(
+                isCorrect
+                  ? 'border-[color:var(--success)]/30 bg-[color:var(--success)]/5'
+                  : 'border-destructive/30 bg-destructive/5'
+              )}
             >
-              <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div
-                      className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-semibold ${
-                        isCorrect
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {index + 1}
-                    </div>
-                    <CardTitle className="text-lg">{result.question}</CardTitle>
+              <CardContent className="space-y-4 p-6">
+                <div className="flex items-start gap-3">
+                  <div
+                    className={cn(
+                      'flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
+                      isCorrect
+                        ? 'bg-[color:var(--success)]/15 text-[color:var(--success)]'
+                        : 'bg-destructive/15 text-destructive'
+                    )}
+                  >
+                    {index + 1}
                   </div>
+                  <h3 className="flex-1 text-base font-semibold leading-snug sm:text-lg">
+                    {result.question}
+                  </h3>
                   {isCorrect ? (
-                    <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
+                    <CheckCircle2 className="size-6 shrink-0 text-[color:var(--success)]" />
                   ) : (
-                    <XCircle className="h-6 w-6 text-red-600 flex-shrink-0" />
+                    <XCircle className="size-6 shrink-0 text-destructive" />
                   )}
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {/* Show all options with indicators */}
+
+                <div className="space-y-2">
                   {result.options.map((option, optionIndex) => {
                     const isUserAnswer = result.userAnswer === option;
                     const isCorrectAnswer = result.correctAnswer === option;
@@ -254,33 +280,35 @@ function QuizResultsContent() {
                     return (
                       <div
                         key={optionIndex}
-                        className={`
-                          flex items-start gap-3 p-3 rounded-lg border
-                          ${
-                            isCorrectAnswer
-                              ? 'border-green-300 bg-green-100'
-                              : isUserAnswer && !isCorrect
-                              ? 'border-red-300 bg-red-100'
-                              : 'border-border bg-background'
-                          }
-                        `}
+                        className={cn(
+                          'flex items-start gap-3 rounded-lg border p-3',
+                          isCorrectAnswer
+                            ? 'border-[color:var(--success)]/40 bg-[color:var(--success)]/10'
+                            : isUserAnswer && !isCorrect
+                            ? 'border-destructive/40 bg-destructive/10'
+                            : 'border-border bg-background'
+                        )}
                       >
-                        {isCorrectAnswer && (
-                          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        {isCorrectAnswer ? (
+                          <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-[color:var(--success)]" />
+                        ) : isUserAnswer && !isCorrect ? (
+                          <XCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
+                        ) : (
+                          <span className="mt-0.5 size-5 shrink-0" />
                         )}
-                        {isUserAnswer && !isCorrect && (
-                          <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                        )}
-                        {!isCorrectAnswer && !isUserAnswer && (
-                          <div className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                        )}
-                        <div className="flex-1">
-                          <p className="font-medium">{option}</p>
+                        <div className="flex-1 space-y-1">
+                          <p className="text-sm font-medium sm:text-base">
+                            {option}
+                          </p>
                           {isCorrectAnswer && (
-                            <p className="text-xs text-green-700 mt-1">Correct Answer</p>
+                            <p className="text-xs text-[color:var(--success)]">
+                              Tačan odgovor
+                            </p>
                           )}
                           {isUserAnswer && !isCorrect && (
-                            <p className="text-xs text-red-700 mt-1">Your Answer</p>
+                            <p className="text-xs text-destructive">
+                              Tvoj odgovor
+                            </p>
                           )}
                         </div>
                       </div>
@@ -293,43 +321,34 @@ function QuizResultsContent() {
         })}
       </div>
 
-      {/* Actions Footer */}
-      <Card className="mt-8">
-        <CardFooter className="flex flex-col sm:flex-row gap-4 pt-6">
-          <Button
-            variant="outline"
-            onClick={handleBackToQuizzes}
-            className="w-full sm:w-auto"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Quizzes
-          </Button>
-          <Button
-            onClick={() => router.push('/dashboard/student/lessons')}
-            className="w-full sm:w-auto"
-          >
-            Continue Learning
-          </Button>
-        </CardFooter>
-      </Card>
+      <div className="flex flex-col gap-3 border-t pt-6 sm:flex-row sm:justify-between">
+        <Button variant="outline" asChild>
+          <Link href="/dashboard/student/quizzes">
+            <ArrowLeft className="mr-2 size-4" />
+            Nazad na kvizove
+          </Link>
+        </Button>
+        <Button onClick={() => router.push('/dashboard/student/lessons')}>
+          <BookOpen className="mr-2 size-4" />
+          Nastavi sa učenjem
+          <ArrowRight className="ml-2 size-4" />
+        </Button>
+      </div>
     </div>
   );
 }
 
-/**
- * Main component with Suspense wrapper
- */
 export default function QuizResultsPage() {
   return (
     <Suspense
       fallback={
-        <div className="container mx-auto max-w-4xl py-8 px-4">
-          <Card>
-            <CardContent className="py-16 flex flex-col items-center justify-center gap-4">
-              <BarChart3 className="h-8 w-8 animate-pulse text-primary" />
-              <p className="text-muted-foreground">Loading results...</p>
-            </CardContent>
-          </Card>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="mx-auto size-8 animate-spin text-primary" />
+            <p className="mt-4 text-sm text-muted-foreground">
+              Učitavanje rezultata...
+            </p>
+          </div>
         </div>
       }
     >

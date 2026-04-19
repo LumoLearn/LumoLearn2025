@@ -24,8 +24,27 @@ const atkinsonHyperlegible = Atkinson_Hyperlegible({
 });
 
 export const metadata: Metadata = {
-  title: "LumoLearn - Inclusive Learning Platform",
-  description: "An inclusive learning environment for children with special needs",
+  title: {
+    default: "LumoLearn",
+    template: "%s | LumoLearn",
+  },
+  description:
+    "Inkluzivna obrazovna platforma posvećena deci sa posebnim potrebama — slabovidim učenicima i deci sa disleksijom.",
+  applicationName: "LumoLearn",
+  openGraph: {
+    title: "LumoLearn — Učenje bez prepreka",
+    description:
+      "Inkluzivna obrazovna platforma za decu sa posebnim potrebama.",
+    type: "website",
+    locale: "sr_RS",
+    siteName: "LumoLearn",
+  },
+  twitter: {
+    card: "summary",
+    title: "LumoLearn — Učenje bez prepreka",
+    description:
+      "Inkluzivna obrazovna platforma za decu sa posebnim potrebama.",
+  },
 };
 
 export default function RootLayout({
@@ -34,7 +53,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="sr" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${atkinsonHyperlegible.variable} antialiased`}
       >

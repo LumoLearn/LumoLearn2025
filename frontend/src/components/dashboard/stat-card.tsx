@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -12,6 +13,7 @@ interface StatCardProps {
   accent?: 'primary' | 'success' | 'warning' | 'info';
   isLoading?: boolean;
   className?: string;
+  href?: string;
 }
 
 const ACCENT_CLASSES: Record<NonNullable<StatCardProps['accent']>, string> = {
@@ -29,9 +31,16 @@ export function StatCard({
   accent = 'primary',
   isLoading,
   className,
+  href,
 }: StatCardProps) {
-  return (
-    <Card className={cn('overflow-hidden', className)}>
+  const card = (
+    <Card
+      className={cn(
+        'overflow-hidden',
+        href && 'transition-all hover:border-primary/40 hover:shadow-md',
+        className
+      )}
+    >
       <CardContent className="flex items-start gap-4 p-6">
         <div
           className={cn(
@@ -55,4 +64,17 @@ export function StatCard({
       </CardContent>
     </Card>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      >
+        {card}
+      </Link>
+    );
+  }
+
+  return card;
 }

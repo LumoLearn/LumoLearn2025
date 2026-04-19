@@ -4,12 +4,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { Upload, FileText, File as FileIcon, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { Upload, FileText, File as FileIcon, X, AlertCircle, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 
 import { lessonsApi } from '@/lib/api/lessons';
 import { lessonUploadSchema, type LessonUploadFormData, formatFileSize, getFileTypeIcon } from '@/lib/schemas/lesson';
@@ -20,38 +21,23 @@ import {
   isFileDropped,
   validateFile,
 } from '@/lib/utils/file-upload';
+import { cn } from '@/lib/utils';
 
-/**
- * Constants
- */
-const REDIRECT_DELAY_MS = 1500;
+const REDIRECT_DELAY_MS = 1200;
 
-/**
- * LessonUploadForm Component
- *
- * A comprehensive form for uploading lesson files (Word/PDF) with:
- * - Drag-and-drop support
- * - File type and size validation
- * - Real-time upload progress tracking
- * - Error handling
- * - Success feedback
- */
 export function LessonUploadForm() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dragCounterRef = useRef(0);
 
-  // Component state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
 
-  // Form handling with react-hook-form and zod
   const {
     register,
     handleSubmit,
@@ -65,68 +51,43 @@ export function LessonUploadForm() {
 
   const titleValue = watch('title');
 
-  /**
-   * Handle file selection from input or drag-and-drop
-   */
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
     const file = handleFileSelection(event);
+    if (!file) return;
 
-    if (!file) {
-      return;
-    }
-
-    // Validate file
     const validation = validateFile(file);
     if (!validation.isValid) {
-      setFileError(validation.error || 'Invalid file');
+      setFileError(validation.error || 'Neispravan fajl');
       setSelectedFile(null);
       return;
     }
 
-    // File is valid
     setSelectedFile(file);
     setFileError(null);
     setValue('file', file, { shouldValidate: true });
 
-    // Auto-fill title if empty
     if (!titleValue) {
       const fileNameWithoutExtension = file.name.replace(/\.[^/.]+$/, '');
       setValue('title', fileNameWithoutExtension);
     }
   };
 
-  /**
-   * Handle drag enter event
-   */
   const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
     preventDefaultDrag(event);
     dragCounterRef.current += 1;
-    if (isFileDropped(event)) {
-      setIsDragging(true);
-    }
+    if (isFileDropped(event)) setIsDragging(true);
   };
 
-  /**
-   * Handle drag over event
-   */
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     preventDefaultDrag(event);
   };
 
-  /**
-   * Handle drag leave event
-   */
   const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
     preventDefaultDrag(event);
     dragCounterRef.current -= 1;
-    if (dragCounterRef.current === 0) {
-      setIsDragging(false);
-    }
+    if (dragCounterRef.current === 0) setIsDragging(false);
   };
 
-  /**
-   * Handle file drop event
-   */
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     preventDefaultDrag(event);
     dragCounterRef.current = 0;
@@ -134,280 +95,212 @@ export function LessonUploadForm() {
     handleFileChange(event);
   };
 
-  /**
-   * Remove selected file
-   */
   const handleRemoveFile = () => {
     setSelectedFile(null);
     setFileError(null);
     setValue('file', null as any);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  /**
-   * Cleanup on component unmount
-   */
   useEffect(() => {
     return () => {
-      // Clear redirect timeout if component unmounts
-      if (redirectTimeoutRef.current) {
-        clearTimeout(redirectTimeoutRef.current);
-      }
+      if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
     };
   }, []);
 
-  /**
-   * Handle form submission
-   */
   const onSubmit = async (data: LessonUploadFormData) => {
     if (!selectedFile) {
-      setFileError('You must select a file');
+      setFileError('Morate izabrati fajl');
       return;
     }
 
     setIsUploading(true);
-    setUploadError(null);
     setUploadProgress(0);
 
     try {
-      // Upload lesson with real-time progress tracking
-      await lessonsApi.uploadLesson(
-        selectedFile,
-        data.title,
-        (progressEvent) => {
-          setUploadProgress(progressEvent.percentage);
-        }
-      );
+      await lessonsApi.uploadLesson(selectedFile, data.title, (progressEvent) => {
+        setUploadProgress(progressEvent.percentage);
+      });
 
-      // Set to 100% on completion
       setUploadProgress(100);
-
-      // Show success state
       setUploadSuccess(true);
+      toast.success('Lekcija je uspešno otpremljena');
 
-      // Redirect after success with cleanup tracking
       redirectTimeoutRef.current = setTimeout(() => {
         router.push('/dashboard/teacher/lessons');
       }, REDIRECT_DELAY_MS);
     } catch (error: any) {
-      setUploadError(
+      const message =
         error.response?.data?.error ||
         error.message ||
-        'An error occurred while uploading the lesson'
-      );
+        'Došlo je do greške prilikom otpremanja lekcije';
+      toast.error(message);
       setUploadProgress(0);
     } finally {
       setIsUploading(false);
     }
   };
 
-  /**
-   * Get file type icon component
-   */
-  const getFileIcon = () => {
-    if (!selectedFile) return <FileIcon className="w-8 h-8" />;
-
-    const fileType = getFileTypeIcon(selectedFile.name);
+  const renderFileIcon = () => {
+    const fileType = selectedFile ? getFileTypeIcon(selectedFile.name) : 'unknown';
+    const iconClass = 'size-12';
     if (fileType === 'pdf') {
-      return <FileIcon className="w-8 h-8 text-red-500" />;
+      return (
+        <div className="flex size-16 items-center justify-center rounded-full bg-destructive/10">
+          <FileIcon className={cn(iconClass, 'text-destructive')} />
+        </div>
+      );
     }
-    return <FileText className="w-8 h-8 text-blue-500" />;
+    return (
+      <div className="flex size-16 items-center justify-center rounded-full bg-info/10">
+        <FileText className={cn(iconClass, 'text-info')} />
+      </div>
+    );
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Upload New Lesson</CardTitle>
-        <CardDescription>
-          Upload a Word (.docx) or PDF file with lesson content
-        </CardDescription>
-      </CardHeader>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="file-upload">
+          Fajl lekcije <span className="text-destructive">*</span>
+        </Label>
 
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* File Upload Area */}
-          <div className="space-y-2">
-            <Label htmlFor="file-upload">Lesson File *</Label>
+        <div
+          onClick={!isUploading ? createFileInputClickHandler(fileInputRef) : undefined}
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={cn(
+            'relative flex min-h-[280px] items-center justify-center rounded-lg border-2 border-dashed p-10 transition-colors',
+            !isUploading && 'cursor-pointer',
+            isDragging
+              ? 'border-primary bg-primary/5'
+              : 'border-border hover:border-primary/50 hover:bg-accent/40',
+            selectedFile && !fileError && 'bg-accent/30',
+            fileError && 'border-destructive bg-destructive/5',
+            isUploading && 'opacity-60 pointer-events-none'
+          )}
+        >
+          <input
+            ref={fileInputRef}
+            id="file-upload"
+            type="file"
+            accept=".docx,.pdf"
+            onChange={handleFileChange}
+            className="hidden"
+            disabled={isUploading}
+          />
 
-            {/* Drag and Drop Zone */}
-            <div
-              onClick={createFileInputClickHandler(fileInputRef)}
-              onDragEnter={handleDragEnter}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`
-                relative border-2 border-dashed rounded-lg p-8
-                transition-all duration-200 cursor-pointer
-                ${isDragging
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/50 hover:bg-accent/50'
-                }
-                ${selectedFile ? 'bg-accent/30' : ''}
-                ${fileError ? 'border-destructive bg-destructive/5' : ''}
-              `}
-            >
-              {/* Hidden File Input */}
-              <input
-                ref={fileInputRef}
-                id="file-upload"
-                type="file"
-                accept=".docx,.pdf"
-                onChange={handleFileChange}
-                className="hidden"
-                disabled={isUploading}
-              />
-
-              <div className="flex flex-col items-center justify-center space-y-4">
-                {/* Upload Icon or File Icon */}
-                {!selectedFile ? (
-                  <Upload className="w-12 h-12 text-muted-foreground" />
-                ) : (
-                  getFileIcon()
-                )}
-
-                {/* Upload Text or File Info */}
-                {!selectedFile ? (
-                  <>
-                    <div className="text-center">
-                      <p className="text-sm font-medium">
-                        Click or drag file here
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Supported formats: .docx, .pdf (max 10MB)
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <div className="w-full text-center space-y-2">
-                    <p className="text-sm font-medium truncate">
-                      {selectedFile.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatFileSize(selectedFile.size)}
-                    </p>
-
-                    {/* Remove File Button */}
-                    {!isUploading && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveFile();
-                        }}
-                        className="mt-2"
-                      >
-                        <X className="w-4 h-4 mr-1" />
-                        Remove file
-                      </Button>
-                    )}
-                  </div>
-                )}
+          <div className="flex flex-col items-center justify-center gap-4 text-center">
+            {!selectedFile ? (
+              <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
+                <Upload className="size-7 text-primary" />
               </div>
+            ) : (
+              renderFileIcon()
+            )}
 
-              {/* Dragging Overlay */}
-              {isDragging && (
-                <div className="absolute inset-0 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <p className="text-sm font-medium text-primary">
-                    Drop file here...
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* File Error */}
-            {fileError && (
-              <div className="flex items-center gap-2 text-sm text-destructive">
-                <AlertCircle className="w-4 h-4" />
-                <span>{fileError}</span>
+            {!selectedFile ? (
+              <div className="space-y-1.5">
+                <p className="text-base font-medium">Klikni ili prevuci fajl ovde</p>
+                <p className="text-sm text-muted-foreground">
+                  Podržani formati: .docx, .pdf &nbsp;·&nbsp; maks. 10 MB
+                </p>
+              </div>
+            ) : (
+              <div className="w-full space-y-2">
+                <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+                <p className="text-xs text-muted-foreground">{formatFileSize(selectedFile.size)}</p>
+                {!isUploading && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveFile();
+                    }}
+                  >
+                    <X className="mr-1 size-4" />
+                    Ukloni fajl
+                  </Button>
+                )}
               </div>
             )}
           </div>
 
-          {/* Title Input */}
-          <div className="space-y-2">
-            <Label htmlFor="title">Lesson Title *</Label>
-            <Input
-              id="title"
-              type="text"
-              placeholder="Enter lesson title..."
-              {...register('title')}
-              disabled={isUploading}
-              className={errors.title ? 'border-destructive' : ''}
-            />
-            {errors.title && (
-              <p className="text-sm text-destructive">{errors.title.message}</p>
-            )}
+          {isDragging && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-primary/10">
+              <p className="text-sm font-medium text-primary">Otpusti fajl ovde...</p>
+            </div>
+          )}
+        </div>
+
+        {fileError && (
+          <div className="flex items-center gap-2 text-sm text-destructive">
+            <AlertCircle className="size-4" />
+            <span>{fileError}</span>
           </div>
+        )}
+      </div>
 
-          {/* Upload Progress */}
-          {isUploading && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span>Uploading...</span>
-                <span>{uploadProgress}%</span>
-              </div>
-              <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all duration-300"
-                  style={{ width: `${uploadProgress}%` }}
-                />
-              </div>
-            </div>
-          )}
+      <div className="space-y-2">
+        <Label htmlFor="title">
+          Naslov lekcije <span className="text-destructive">*</span>
+        </Label>
+        <Input
+          id="title"
+          type="text"
+          placeholder="npr. Uvod u ćelijsku biologiju"
+          {...register('title')}
+          disabled={isUploading}
+          aria-invalid={errors.title ? 'true' : 'false'}
+          className={errors.title ? 'border-destructive' : ''}
+        />
+        {errors.title && (
+          <p className="text-sm text-destructive">{errors.title.message}</p>
+        )}
+      </div>
 
-          {/* Success Message */}
-          {uploadSuccess && (
-            <div className="flex items-center gap-2 p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
-              <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
-              <p className="text-sm text-green-700 dark:text-green-300">
-                Lesson uploaded successfully! Redirecting...
-              </p>
-            </div>
-          )}
-
-          {/* Error Message */}
-          {uploadError && (
-            <div className="flex items-center gap-2 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
-              <AlertCircle className="w-5 h-5 text-destructive" />
-              <p className="text-sm text-destructive">{uploadError}</p>
-            </div>
-          )}
-
-          {/* Form Actions */}
-          <div className="flex items-center justify-between gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.back()}
-              disabled={isUploading}
-            >
-              Cancel
-            </Button>
-
-            <Button
-              type="submit"
-              disabled={isUploading || !selectedFile || uploadSuccess}
-            >
-              {isUploading ? (
-                <>
-                  <Upload className="w-4 h-4 mr-2 animate-pulse" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Lesson
-                </>
-              )}
-            </Button>
+      {(isUploading || uploadSuccess) && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">
+              {uploadSuccess ? 'Otpremljeno' : 'Otpremanje...'}
+            </span>
+            <span className="font-medium tabular-nums">{uploadProgress}%</span>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+          <Progress value={uploadProgress} />
+        </div>
+      )}
+
+      <div className="flex items-center justify-end gap-3 border-t pt-6">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.back()}
+          disabled={isUploading}
+        >
+          Otkaži
+        </Button>
+        <Button
+          type="submit"
+          disabled={isUploading || !selectedFile || uploadSuccess}
+        >
+          {isUploading ? (
+            <>
+              <Loader2 className="mr-2 size-4 animate-spin" />
+              Otpremanje...
+            </>
+          ) : (
+            <>
+              <Upload className="mr-2 size-4" />
+              Otpremi lekciju
+            </>
+          )}
+        </Button>
+      </div>
+    </form>
   );
 }

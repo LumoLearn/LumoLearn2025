@@ -13,6 +13,7 @@ import {
   Sparkles,
   Users,
 } from 'lucide-react';
+import Image from 'next/image';
 
 import { registerSchema, type RegisterFormData } from '@/lib/schemas/auth';
 import { authService } from '@/lib/services/auth.service';
@@ -117,9 +118,13 @@ export default function RegisterPage() {
         />
         <div className="relative flex h-full flex-col justify-between p-10 text-primary-foreground">
           <Link href="/" className="flex w-fit items-center gap-2">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-white/15 backdrop-blur">
-              <Sparkles className="size-5" />
-            </div>
+            <Image
+              src="/logo.png"
+              alt="LumoLearn"
+              width={206}
+              height={87}
+              className="h-10 w-auto shrink-0"
+            />
             <span className="text-lg font-semibold">LumoLearn</span>
           </Link>
           <div className="space-y-6">
@@ -146,7 +151,7 @@ export default function RegisterPage() {
           <ThemeToggle />
         </div>
 
-        <div className="flex flex-1 items-center justify-center p-6 md:p-10">
+        <div className="flex flex-1 items-center justify-center p-4 sm:p-6 md:p-10">
           <div className="w-full max-w-md">
             <Button
               variant="ghost"
@@ -160,9 +165,9 @@ export default function RegisterPage() {
               </Link>
             </Button>
 
-            <Card className="border-none shadow-none lg:border lg:shadow-sm">
-              <CardHeader className="space-y-2 px-0 lg:px-6">
-                <CardTitle className="text-3xl font-bold">
+            <Card>
+              <CardHeader className="space-y-2">
+                <CardTitle className="text-2xl font-bold sm:text-3xl">
                   Kreiraj nalog
                 </CardTitle>
                 <CardDescription>
@@ -170,7 +175,7 @@ export default function RegisterPage() {
                 </CardDescription>
               </CardHeader>
               <form onSubmit={handleSubmit(onSubmit)} noValidate>
-                <CardContent className="space-y-4 px-0 lg:px-6">
+                <CardContent className="space-y-4">
                   {apiError && (
                     <div
                       className="flex items-start gap-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
@@ -182,7 +187,7 @@ export default function RegisterPage() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="firstName" required>
                         Ime
@@ -314,7 +319,7 @@ export default function RegisterPage() {
                   </fieldset>
                 </CardContent>
 
-                <CardFooter className="flex flex-col space-y-4 px-0 lg:px-6">
+                <CardFooter className="flex flex-col space-y-4">
                   <Button
                     type="submit"
                     size="lg"

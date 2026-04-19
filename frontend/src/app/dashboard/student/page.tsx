@@ -89,6 +89,7 @@ export default function StudentDashboard() {
           icon={BookOpen}
           accent="primary"
           isLoading={isLoading}
+          href="/dashboard/student/lessons"
         />
         <StatCard
           label="Kvizovi"
@@ -97,6 +98,7 @@ export default function StudentDashboard() {
           icon={Brain}
           accent="info"
           isLoading={isLoading}
+          href="/dashboard/student/quizzes"
         />
         <StatCard
           label="Napredak"

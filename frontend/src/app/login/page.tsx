@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, ArrowLeft, Heart, Sparkles } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Heart } from 'lucide-react';
+import Image from 'next/image';
 
 import { loginSchema, type LoginFormData } from '@/lib/schemas/auth';
 import { authService } from '@/lib/services/auth.service';
@@ -74,9 +75,13 @@ export default function LoginPage() {
         />
         <div className="relative flex h-full flex-col justify-between p-10 text-primary-foreground">
           <Link href="/" className="flex items-center gap-2 w-fit">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-white/15 backdrop-blur">
-              <Sparkles className="size-5" />
-            </div>
+            <Image
+              src="/logo.png"
+              alt="LumoLearn"
+              width={206}
+              height={87}
+              className="h-10 w-auto shrink-0"
+            />
             <span className="text-lg font-semibold">LumoLearn</span>
           </Link>
           <div className="space-y-6">
@@ -103,7 +108,7 @@ export default function LoginPage() {
           <ThemeToggle />
         </div>
 
-        <div className="flex flex-1 items-center justify-center p-6 md:p-10">
+        <div className="flex flex-1 items-center justify-center p-4 sm:p-6 md:p-10">
           <div className="w-full max-w-md">
             <Button
               variant="ghost"
@@ -117,15 +122,15 @@ export default function LoginPage() {
               </Link>
             </Button>
 
-            <Card className="border-none shadow-none lg:border lg:shadow-sm">
-              <CardHeader className="space-y-2 px-0 lg:px-6">
-                <CardTitle className="text-3xl font-bold">Prijava</CardTitle>
+            <Card>
+              <CardHeader className="space-y-2">
+                <CardTitle className="text-2xl font-bold sm:text-3xl">Prijava</CardTitle>
                 <CardDescription>
                   Unesite vaše podatke da biste pristupili nalogu.
                 </CardDescription>
               </CardHeader>
               <form onSubmit={handleSubmit(onSubmit)} noValidate>
-                <CardContent className="space-y-4 px-0 lg:px-6">
+                <CardContent className="space-y-4">
                   {apiError && (
                     <div
                       className="flex items-start gap-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
@@ -168,7 +173,7 @@ export default function LoginPage() {
                   </div>
                 </CardContent>
 
-                <CardFooter className="flex flex-col space-y-4 px-0 lg:px-6">
+                <CardFooter className="flex flex-col space-y-4">
                   <Button
                     type="submit"
                     size="lg"

@@ -2,12 +2,12 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   BookOpen,
   GraduationCap,
   Heart,
-  Sparkles,
   Users,
 } from 'lucide-react';
 
@@ -33,19 +33,24 @@ export default function Home() {
       />
 
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 md:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Sparkles className="size-5" />
-            </div>
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-4 md:px-6 lg:px-8">
+          <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/logo.png"
+              alt="LumoLearn"
+              width={206}
+              height={87}
+              className="h-9 w-auto shrink-0"
+              priority
+            />
             <span className="text-lg font-semibold">LumoLearn</span>
-          </div>
-          <div className="flex items-center gap-2">
+          </Link>
+          <div className="flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
               <Link href="/login">Prijava</Link>
             </Button>
-            <Button asChild>
+            <Button size="sm" asChild>
               <Link href="/register">Registracija</Link>
             </Button>
           </div>
