@@ -32,6 +32,7 @@ import type { Child } from '@/lib/types/parent';
 import type { StudentProgress } from '@/lib/types/progress';
 import { LinkStudentDialog } from '@/components/features/parent/LinkStudentDialog';
 import { StatCard } from '@/components/dashboard/stat-card';
+import { EmptyState } from '@/components/dashboard/empty-state';
 
 interface ChildWithProgress extends Child {
   progress?: StudentProgress;
@@ -226,19 +227,11 @@ export default function ParentDashboard() {
             <Skeleton className="h-72 w-full" />
           </div>
         ) : children.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-              <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                <UserPlus className="size-6" />
-              </div>
-              <div className="space-y-1">
-                <p className="font-medium">Još nema povezane dece</p>
-                <p className="text-sm text-muted-foreground">
-                  Klikni na dugme iznad da povežeš učenika pomoću njegovog ID-a.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={UserPlus}
+            title="Još nema povezane dece"
+            description="Klikni na dugme iznad da povežeš učenika pomoću njegovog ID-a."
+          />
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {children.map((child) => (
