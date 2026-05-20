@@ -60,22 +60,22 @@ export default function Home() {
       <main className="flex-1">
         <section className="mx-auto w-full max-w-7xl px-4 py-16 md:px-6 md:py-24 lg:px-8 lg:py-32">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border bg-card px-4 py-1.5 text-sm text-muted-foreground">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border bg-card px-4 py-1.5 text-sm text-muted-foreground motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:duration-500 motion-safe:fill-mode-both">
               <Heart className="size-4 text-primary" />
               <span>Inkluzivno učenje za svako dete</span>
             </div>
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
+            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-700 motion-safe:delay-100 motion-safe:fill-mode-both">
               Učenje bez{' '}
               <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                 prepreka
               </span>
             </h1>
-            <p className="mt-6 text-lg leading-8 text-muted-foreground md:text-xl">
+            <p className="mt-6 text-lg leading-8 text-muted-foreground md:text-xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-700 motion-safe:delay-200 motion-safe:fill-mode-both">
               LumoLearn je obrazovna platforma posvećena deci sa posebnim
               potrebama. Podržavamo slabovide učenike i decu sa disleksijom kroz
               pristupačno i prilagodljivo učenje.
             </p>
-            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-700 motion-safe:delay-300 motion-safe:fill-mode-both">
               <Button size="lg" asChild className="w-full sm:w-auto">
                 <Link href="/register">Započni besplatno</Link>
               </Button>
@@ -92,7 +92,10 @@ export default function Home() {
         </section>
 
         <section className="mx-auto w-full max-w-7xl px-4 pb-20 md:px-6 md:pb-28 lg:px-8">
-          <div className="mx-auto mb-12 max-w-2xl text-center">
+          <div
+            className="mx-auto mb-12 max-w-2xl text-center motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-700 motion-safe:fill-mode-both"
+            style={{ animationDelay: '500ms' }}
+          >
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Rešenje za ceo obrazovni tim
             </h2>
@@ -105,16 +108,19 @@ export default function Home() {
               icon={BookOpen}
               title="Za učenike"
               description="Personalizovano učenje sa opcijama pristupačnosti — prilagodljiv font, boje i fontovi za disleksiju."
+              delay={600}
             />
             <FeatureCard
               icon={GraduationCap}
               title="Za nastavnike"
               description="Kreirajte i upravljajte inkluzivnim lekcijama i kvizovima. AI pomaže u pravljenju sadržaja."
+              delay={700}
             />
             <FeatureCard
               icon={Users}
               title="Za roditelje"
               description="Pratite napredak vašeg deteta u realnom vremenu i budite uključeni u proces učenja."
+              delay={800}
             />
           </div>
         </section>
@@ -134,12 +140,16 @@ interface FeatureCardProps {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   description: string;
+  delay?: number;
 }
 
-function FeatureCard({ icon: Icon, title, description }: FeatureCardProps) {
+function FeatureCard({ icon: Icon, title, description, delay }: FeatureCardProps) {
   return (
-    <div className="group relative rounded-xl border bg-card p-6 transition-colors hover:border-primary/40 hover:bg-accent/30">
-      <div className="mb-4 inline-flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+    <div
+      className="group relative rounded-xl border bg-card p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent/30 hover:shadow-md motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-700 motion-safe:fill-mode-both"
+      style={delay !== undefined ? { animationDelay: `${delay}ms` } : undefined}
+    >
+      <div className="mb-4 inline-flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110">
         <Icon className="size-6" />
       </div>
       <h3 className="mb-2 text-lg font-semibold">{title}</h3>

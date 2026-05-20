@@ -243,7 +243,12 @@ export function SidebarLayout({ children, title }: SidebarLayoutProps) {
             </div>
           </header>
           <main className="flex-1 p-4 md:p-6 lg:p-8">
-            <div className="mx-auto w-full max-w-7xl">{children}</div>
+            <div
+              key={pathname}
+              className="mx-auto w-full max-w-7xl motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300"
+            >
+              {children}
+            </div>
           </main>
         </SidebarInset>
       </SidebarProvider>
