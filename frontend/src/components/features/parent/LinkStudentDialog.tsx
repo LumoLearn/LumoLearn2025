@@ -1,7 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { AlertCircle, Loader2, UserPlus } from 'lucide-react';
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +21,10 @@ interface LinkStudentDialogProps {
   onLinkStudent: (studentId: string) => Promise<void>;
 }
 
-export function LinkStudentDialog({ onSuccess, onLinkStudent }: LinkStudentDialogProps) {
+export function LinkStudentDialog({
+  onSuccess,
+  onLinkStudent,
+}: LinkStudentDialogProps) {
   const [open, setOpen] = useState(false);
   const [studentId, setStudentId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +34,7 @@ export function LinkStudentDialog({ onSuccess, onLinkStudent }: LinkStudentDialo
     e.preventDefault();
 
     if (!studentId.trim()) {
-      setError('Please enter a student ID');
+      setError('Unesi učenički ID.');
       return;
     }
 
@@ -31,12 +44,11 @@ export function LinkStudentDialog({ onSuccess, onLinkStudent }: LinkStudentDialo
 
       await onLinkStudent(studentId.trim());
 
-      // Success - close dialog and refresh
       setOpen(false);
       setStudentId('');
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Failed to link student');
+      setError(err.message || 'Povezivanje učenika nije uspelo.');
     } finally {
       setIsLoading(false);
     }
@@ -46,7 +58,6 @@ export function LinkStudentDialog({ onSuccess, onLinkStudent }: LinkStudentDialo
     if (!isLoading) {
       setOpen(newOpen);
       if (!newOpen) {
-        // Reset form when closing
         setStudentId('');
         setError(null);
       }
@@ -56,52 +67,75 @@ export function LinkStudentDialog({ onSuccess, onLinkStudent }: LinkStudentDialo
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button>+ Link Student</Button>
+        <Button>
+          <UserPlus className="mr-2 size-4" />
+          Poveži učenika
+        </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <form onSubmit={handleSubmit}>
+      <DialogContent className="sm:max-w-[480px]">
+        <form onSubmit={handleSubmit} noValidate>
           <DialogHeader>
-            <DialogTitle>Link a Student</DialogTitle>
+            <DialogTitle>Poveži učenika</DialogTitle>
             <DialogDescription>
-              Enter the student&apos;s ID to connect them to your parent account.
-              You can find the student ID from their profile or settings page.
+              Unesi ID deteta da bi povezao/la njegov nalog sa svojim. ID se
+              nalazi u detetovom profilu.
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="studentId">Student ID</Label>
+              <Label htmlFor="studentId" required>
+                Učenički ID
+              </Label>
               <Input
                 id="studentId"
-                placeholder="e.g., 550e8400-e29b-41d4-a716-446655440000"
+                placeholder="npr. 550e8400-e29b-41d4-a716-446655440000"
                 value={studentId}
                 onChange={(e) => setStudentId(e.target.value)}
                 disabled={isLoading}
-                className="col-span-3"
+                className="font-mono text-xs"
+                aria-required="true"
+                aria-invalid={error ? 'true' : 'false'}
+                aria-describedby="studentId-help"
               />
-              <p className="text-xs text-muted-foreground">
-                The student ID is a unique identifier (UUID format)
+              <p id="studentId-help" className="text-xs text-muted-foreground">
+                ID je jedinstveni identifikator u UUID formatu.
               </p>
             </div>
 
             {error && (
-              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                {error}
+              <div
+                className="flex items-start gap-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+                role="alert"
+                aria-live="assertive"
+              >
+                <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                <span>{error}</span>
               </div>
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row">
             <Button
               type="button"
               variant="outline"
               onClick={() => handleOpenChange(false)}
               disabled={isLoading}
             >
-              Cancel
+              Otkaži
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Linking...' : 'Link Student'}
+            <Button type="submit" disabled={isLoading} aria-busy={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Povezivanje...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="mr-2 size-4" />
+                  Poveži
+                </>
+              )}
             </Button>
           </DialogFooter>
         </form>

@@ -1,76 +1,85 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Loader2, BookOpen, Search, AlertCircle, Brain, Clock, BarChart3, CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
+import {
+  AlertCircle,
+  ArrowRight,
+  Brain,
+  CheckCircle2,
+  HelpCircle,
+  Search,
+  Sparkles,
+} from 'lucide-react';
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthStore } from '@/store/auth.store';
+import { PageHeader } from '@/components/dashboard/page-header';
+import { SearchInput } from '@/components/dashboard/search-input';
+import { EmptyState } from '@/components/dashboard/empty-state';
 
 import { quizzesApi } from '@/lib/api/quizzes';
 import parentService from '@/lib/api/parent';
 import type { Quiz } from '@/lib/types/quiz';
 
-/**
- * Student Quizzes List Page
- *
- * Displays all published quizzes for students to take.
- * Features:
- * - Fetches published quizzes from API (BE-015)
- * - Grid layout with responsive design
- * - Search/filter functionality
- * - Loading, error, and empty states
- * - Dynamic rendering without hardcoding
- * - Shows quiz metadata (difficulty, number of questions)
- */
+const DIFFICULTY_LABELS: Record<string, string> = {
+  easy: 'Lako',
+  medium: 'Srednje',
+  hard: 'Teško',
+};
+
+function getDifficultyVariant(
+  difficulty?: string
+): 'success' | 'warning' | 'destructive' | 'outline' {
+  switch (difficulty) {
+    case 'easy':
+      return 'success';
+    case 'medium':
+      return 'warning';
+    case 'hard':
+      return 'destructive';
+    default:
+      return 'outline';
+  }
+}
+
 export default function StudentQuizzesPage() {
-  const router = useRouter();
   const { user } = useAuthStore();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [filteredQuizzes, setFilteredQuizzes] = useState<Quiz[]>([]);
-  const [completedQuizIds, setCompletedQuizIds] = useState<Set<string>>(new Set());
+  const [completedQuizIds, setCompletedQuizIds] = useState<Set<string>>(
+    new Set()
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  /**
-   * Fetch published quizzes and student progress on component mount
-   */
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
         setIsLoading(true);
         setError(null);
-
-        console.log('[Student Quizzes] Fetching published quizzes...');
         const response = await quizzesApi.getPublishedQuizzes();
-        console.log('[Student Quizzes] Response:', response);
+        setQuizzes(response.quizzes || []);
 
-        const fetchedQuizzes = response.quizzes || [];
-        setQuizzes(fetchedQuizzes);
-        setFilteredQuizzes(fetchedQuizzes);
-
-        // Fetch student progress to get completed quizzes
         if (user) {
           try {
             const progress = await parentService.getStudentProgress(user.id);
-            const completed = new Set(progress.recentAttempts.map(attempt => attempt.quizId));
-            setCompletedQuizIds(completed);
-            console.log('[Student Quizzes] Completed quiz IDs:', Array.from(completed));
-          } catch (err) {
-            console.log('[Student Quizzes] No progress data yet');
+            setCompletedQuizIds(
+              new Set(progress.recentAttempts.map((a) => a.quizId))
+            );
+          } catch {
+            // No progress yet
           }
         }
       } catch (err: any) {
-        console.error('[Student Quizzes] Error fetching quizzes:', err);
-        const errorMsg =
+        const msg =
           err.response?.data?.error ||
           err.message ||
-          'Failed to load quizzes';
-        setError(errorMsg);
+          'Učitavanje kvizova nije uspelo';
+        setError(msg);
       } finally {
         setIsLoading(false);
       }
@@ -79,289 +88,156 @@ export default function StudentQuizzesPage() {
     fetchQuizzes();
   }, [user]);
 
-  /**
-   * Filter quizzes based on search query
-   */
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredQuizzes(quizzes);
-      return;
-    }
+  const filteredQuizzes = searchQuery.trim()
+    ? quizzes.filter((quiz) =>
+        quiz.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : quizzes;
 
-    const query = searchQuery.toLowerCase();
-    const filtered = quizzes.filter((quiz) =>
-      quiz.title.toLowerCase().includes(query)
-    );
-    setFilteredQuizzes(filtered);
-  }, [searchQuery, quizzes]);
-
-  /**
-   * Handle search input change
-   */
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
-  /**
-   * Navigate to quiz taking page
-   */
-  const handleStartQuiz = (quizId: string) => {
-    router.push(`/dashboard/student/quizzes/${quizId}/take`);
-  };
-
-  /**
-   * Get difficulty badge variant
-   */
-  const getDifficultyVariant = (difficulty?: string) => {
-    switch (difficulty) {
-      case 'easy':
-        return 'default';
-      case 'medium':
-        return 'secondary';
-      case 'hard':
-        return 'destructive';
-      default:
-        return 'outline';
-    }
-  };
-
-  /**
-   * Loading state
-   */
-  if (isLoading) {
-    return (
-      <div className="container mx-auto max-w-7xl py-8 px-4">
-        <div className="mb-6">
-          <h2 className="text-3xl font-bold tracking-tight">My Quizzes</h2>
-          <p className="text-muted-foreground">
-            Test your knowledge with interactive quizzes
-          </p>
-        </div>
-
-        <Card>
-          <CardContent className="py-16 flex flex-col items-center justify-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Loading quizzes...</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  /**
-   * Error state
-   */
-  if (error) {
-    return (
-      <div className="container mx-auto max-w-7xl py-8 px-4">
-        <div className="mb-6">
-          <h2 className="text-3xl font-bold tracking-tight">My Quizzes</h2>
-          <p className="text-muted-foreground">
-            Test your knowledge with interactive quizzes
-          </p>
-        </div>
-
-        <Card className="border-destructive">
-          <CardContent className="py-12">
-            <div className="flex flex-col items-center justify-center gap-4 text-center">
-              <div className="rounded-full bg-destructive/10 p-3">
-                <AlertCircle className="h-6 w-6 text-destructive" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Failed to Load Quizzes</h3>
-                <p className="text-sm text-muted-foreground max-w-md">{error}</p>
-              </div>
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-              >
-                Try Again
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  /**
-   * Empty state (no quizzes available)
-   */
-  if (quizzes.length === 0) {
-    return (
-      <div className="container mx-auto max-w-7xl py-8 px-4">
-        <div className="mb-6">
-          <h2 className="text-3xl font-bold tracking-tight">My Quizzes</h2>
-          <p className="text-muted-foreground">
-            Test your knowledge with interactive quizzes
-          </p>
-        </div>
-
-        <Card>
-          <CardContent className="py-16">
-            <div className="flex flex-col items-center justify-center gap-4 text-center">
-              <div className="rounded-full bg-muted p-4">
-                <Brain className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold">No Quizzes Available Yet</h3>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  There are no published quizzes at the moment. Check back later to test your knowledge!
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  /**
-   * No search results state
-   */
-  if (filteredQuizzes.length === 0 && searchQuery) {
-    return (
-      <div className="container mx-auto max-w-7xl py-8 px-4">
-        <div className="mb-6">
-          <h2 className="text-3xl font-bold tracking-tight">My Quizzes</h2>
-          <p className="text-muted-foreground">
-            Test your knowledge with interactive quizzes
-          </p>
-        </div>
-
-        {/* Search bar */}
-        <div className="mb-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search quizzes..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="pl-10"
-            />
-          </div>
-        </div>
-
-        <Card>
-          <CardContent className="py-12">
-            <div className="flex flex-col items-center justify-center gap-4 text-center">
-              <div className="rounded-full bg-muted p-4">
-                <Search className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold">No Quizzes Found</h3>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  No quizzes match &quot;{searchQuery}&quot;. Try a different search term.
-                </p>
-              </div>
-              <button
-                onClick={() => setSearchQuery('')}
-                className="mt-4 px-4 py-2 border rounded-md hover:bg-muted transition-colors"
-              >
-                Clear Search
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  /**
-   * Main content - quizzes grid
-   */
   return (
-    <div className="container mx-auto max-w-7xl py-8 px-4">
-      {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-3xl font-bold tracking-tight">My Quizzes</h2>
-        <p className="text-muted-foreground">
-          Test your knowledge with interactive quizzes
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Moji kvizovi"
+        description="Proveri znanje kroz interaktivne kvizove."
+      />
 
-      {/* Search bar */}
-      <div className="mb-6">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search quizzes..."
+      {!isLoading && !error && quizzes.length > 0 && (
+        <div className="space-y-2">
+          <SearchInput
             value={searchQuery}
-            onChange={handleSearchChange}
-            className="pl-10"
+            onChange={setSearchQuery}
+            placeholder="Pretraži kvizove..."
           />
+          {searchQuery && (
+            <p className="text-sm text-muted-foreground">
+              Pronađeno {filteredQuizzes.length}{' '}
+              {filteredQuizzes.length === 1 ? 'kviz' : 'kvizova'}
+            </p>
+          )}
         </div>
-        {searchQuery && (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Found {filteredQuizzes.length} {filteredQuizzes.length === 1 ? 'quiz' : 'quizzes'}
-          </p>
-        )}
-      </div>
+      )}
 
-      {/* Quizzes grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredQuizzes.map((quiz) => {
-          const isCompleted = completedQuizIds.has(quiz.id);
-
-          return (
-            <Card key={quiz.id} className={`hover:shadow-lg transition-shadow ${isCompleted ? 'border-green-200 dark:border-green-900' : ''}`}>
-              <CardHeader>
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <Brain className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex gap-2">
-                    {isCompleted && (
-                      <Badge variant="success" className="flex items-center gap-1">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Completed
-                      </Badge>
-                    )}
-                    {quiz.quizMetadata?.difficulty && (
-                      <Badge variant={getDifficultyVariant(quiz.quizMetadata.difficulty)}>
-                        {quiz.quizMetadata.difficulty}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <CardTitle className="line-clamp-2">{quiz.title}</CardTitle>
-                <CardDescription>
-                  {quiz.lessonId ? 'Lesson Quiz' : 'Practice Quiz'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  {quiz.quizMetadata?.numQuestions && (
-                    <div className="flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4" />
-                      <span>{quiz.quizMetadata.numQuestions} questions</span>
-                    </div>
-                  )}
-                  {quiz.quizMetadata?.generatedBy && (
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      <span>
-                        {quiz.quizMetadata.generatedBy === 'ai' ? 'AI Generated' : 'Manual'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  className="w-full"
-                  onClick={() => handleStartQuiz(quiz.id)}
-                  variant={isCompleted ? 'outline' : 'default'}
-                >
-                  {isCompleted ? 'Retake Quiz' : 'Start Quiz'}
-                </Button>
-              </CardFooter>
-            </Card>
-          );
-        })}
-      </div>
+      {isLoading ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-56 w-full" />
+          ))}
+        </div>
+      ) : error ? (
+        <EmptyState
+          variant="error"
+          icon={AlertCircle}
+          title="Učitavanje nije uspelo"
+          description={error}
+          action={
+            <Button onClick={() => window.location.reload()}>
+              Pokušaj ponovo
+            </Button>
+          }
+        />
+      ) : quizzes.length === 0 ? (
+        <EmptyState
+          icon={Brain}
+          title="Još nema dostupnih kvizova"
+          description="Trenutno nije objavljen nijedan kviz. Proveri kasnije."
+        />
+      ) : filteredQuizzes.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          title="Nema rezultata"
+          description={`Nijedan kviz ne odgovara upitu "${searchQuery}".`}
+          action={
+            <Button variant="outline" onClick={() => setSearchQuery('')}>
+              Obriši pretragu
+            </Button>
+          }
+        />
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredQuizzes.map((quiz) => (
+            <QuizCard
+              key={quiz.id}
+              quiz={quiz}
+              isCompleted={completedQuizIds.has(quiz.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
+  );
+}
+
+interface QuizCardProps {
+  quiz: Quiz;
+  isCompleted: boolean;
+}
+
+function QuizCard({ quiz, isCompleted }: QuizCardProps) {
+  const difficulty = quiz.quizMetadata?.difficulty;
+  const numQuestions = quiz.quizMetadata?.numQuestions;
+  const isAI = quiz.quizMetadata?.generatedBy === 'ai';
+
+  return (
+    <Link
+      href={`/dashboard/student/quizzes/${quiz.id}/take`}
+      className="group block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    >
+      <Card className="h-full transition-all hover:border-primary/40 hover:shadow-md">
+        <CardContent className="flex h-full flex-col gap-4 p-6">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex size-12 items-center justify-center rounded-lg bg-[color:var(--info)]/10 text-[color:var(--info)]">
+              <Brain className="size-6" />
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-1.5">
+              {isCompleted && (
+                <Badge variant="success" className="gap-1">
+                  <CheckCircle2 className="size-3" />
+                  Rešen
+                </Badge>
+              )}
+              {difficulty && (
+                <Badge variant={getDifficultyVariant(difficulty)}>
+                  {DIFFICULTY_LABELS[difficulty] ?? difficulty}
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <h3 className="line-clamp-2 text-lg font-semibold leading-tight">
+              {quiz.title}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {quiz.lessonId ? 'Kviz uz lekciju' : 'Samostalan kviz'}
+            </p>
+          </div>
+
+          <div className="flex-1" />
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            {numQuestions !== undefined && (
+              <span className="inline-flex items-center gap-1.5">
+                <HelpCircle className="size-3.5" />
+                {numQuestions}{' '}
+                {numQuestions === 1 ? 'pitanje' : 'pitanja'}
+              </span>
+            )}
+            {isAI && (
+              <span className="inline-flex items-center gap-1.5">
+                <Sparkles className="size-3.5" />
+                AI generisano
+              </span>
+            )}
+          </div>
+
+          <div className="border-t pt-4">
+            <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+              {isCompleted ? 'Pokušaj ponovo' : 'Započni kviz'}
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }

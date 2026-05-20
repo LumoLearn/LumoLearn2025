@@ -14,39 +14,35 @@ export function PerformanceDistribution({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Performance Distribution</CardTitle>
+        <CardTitle>Raspodela uspeha</CardTitle>
         <CardDescription>
-          Breakdown of quiz scores by performance level
+          Rezultati kvizova razvrstani po nivou uspešnosti.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <PerformanceBar
-            label="Excellent (90-100%)"
+            label="Odlično (90–100%)"
             count={distribution.excellent}
             total={totalAttempts}
-            color="bg-green-500"
             variant="success"
           />
           <PerformanceBar
-            label="Good (70-89%)"
+            label="Dobro (70–89%)"
             count={distribution.good}
             total={totalAttempts}
-            color="bg-blue-500"
             variant="default"
           />
           <PerformanceBar
-            label="Average (50-69%)"
+            label="Prosečno (50–69%)"
             count={distribution.average}
             total={totalAttempts}
-            color="bg-yellow-500"
             variant="warning"
           />
           <PerformanceBar
-            label="Needs Work (0-49%)"
+            label="Treba rada (0–49%)"
             count={distribution.needsWork}
             total={totalAttempts}
-            color="bg-red-500"
             variant="destructive"
           />
         </div>
