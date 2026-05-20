@@ -1,0 +1,31 @@
+{
+  "name": "lumolearn-ai-service",
+  "version": "1.0.0",
+  "description": "AI Service for LumoLearn - Quiz Generation using Google Gemini",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["ai", "gemini", "quiz", "education"],
+  "author": "LumoLearn Team",
+  "license": "ISC",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "express": "^5.1.0",
+    "dotenv": "^16.4.7",
+    "cors": "^2.8.5",
+    "helmet": "^8.1.0",
+    "express-validator": "^7.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.17",
+    "typescript": "^5.9.3",
+    "ts-node": "^10.9.2",
+    "nodemon": "^3.1.11"
+  }
+}
